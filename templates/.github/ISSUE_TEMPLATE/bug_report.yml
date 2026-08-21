@@ -1,0 +1,97 @@
+name: Bug report
+description: Something in CrownOS does not work as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing, please check
+        [Project status](https://github.com/Crown-OS/crownos-documentations/blob/main/docs/00-overview/project-status.md)
+        and
+        [Known limitations](https://github.com/Crown-OS/crownos-documentations/blob/main/docs/60-users/known-limitations.md).
+        Several components have documented gaps — blur not rendering, the dock
+        not launching applications, five config sections having no reader — and
+        those are known rather than bugs.
+
+        **Do not report security issues here.** See
+        [SECURITY.md](https://github.com/Crown-OS/crownos-documentations/blob/main/SECURITY.md).
+
+  - type: input
+    id: commit
+    attributes:
+      label: Commit hash
+      description: Output of `git rev-parse --short HEAD` in the affected repository.
+      placeholder: 6f3189a
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you observe?
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps. Include the exact commands you ran.
+      placeholder: |
+        1. cd crownbar
+        2. cargo run
+        3. …
+    validations:
+      required: true
+
+  - type: input
+    id: compositor
+    attributes:
+      label: Compositor
+      description: >
+        Which compositor were you running under? This matters a lot — the same
+        symptom under crownpositor and under Sway is usually a different bug.
+      placeholder: crownpositor (CROWN_BACKEND=winit) / Hyprland 0.45 / Sway 1.9
+    validations:
+      required: true
+
+  - type: textarea
+    id: system
+    attributes:
+      label: System information
+      description: >
+        Distribution and kernel, GPU and driver, `rustc --version`, and any
+        relevant package versions (wayland, mesa, vulkan-icd-loader, libinput).
+      placeholder: |
+        Arch Linux, kernel 6.12.4
+        GPU: AMD RX 6700 XT, mesa 24.3.1
+        rustc 1.85.0
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: >
+        Run with `RUST_LOG=debug` and paste the relevant output.
+        Note that crowndock does not initialise its logger, so it produces none.
+      render: text
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Relevant configuration
+      description: >
+        Contents of any `~/.config/crownos/*.ron` file involved. Redact anything
+        personal.
+      render: ron

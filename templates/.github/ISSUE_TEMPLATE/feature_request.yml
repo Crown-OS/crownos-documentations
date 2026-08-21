@@ -1,0 +1,72 @@
+name: Feature request
+description: Suggest something CrownOS should do
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please check
+        [Project status](https://github.com/Crown-OS/crownos-documentations/blob/main/docs/00-overview/project-status.md)
+        first — a good deal of what CrownOS is "missing" is already specified and
+        partly built, and that page lists it.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: >
+        What are you trying to do that you cannot do today? Describe the problem
+        rather than only your proposed solution — there may be a better fit with
+        how CrownOS already works.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      description: Does this touch one repository or several?
+      options:
+        - One repository
+        - Several repositories
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: repos
+    attributes:
+      label: Which repositories
+      placeholder: crownpositor, crownos-config
+
+  - type: textarea
+    id: fit
+    attributes:
+      label: How it fits CrownOS
+      description: >
+        CrownOS has a stated design language — monochromatic, minimal,
+        professional — and some architectural commitments: configuration is the
+        coordination mechanism, there is one action vocabulary for keyboard and
+        gestures, and layout code cannot see Wayland types. How does this fit?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Including doing nothing, or solving it outside CrownOS.
+
+  - type: checkboxes
+    id: contributing
+    attributes:
+      label: Would you like to implement this?
+      options:
+        - label: I would like to work on this myself

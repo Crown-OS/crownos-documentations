@@ -1,0 +1,17 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://github.com/Crown-OS/crownos-documentations
+    about: Architecture, build instructions, component status and the contribution guide.
+
+  - name: Project status — what works today
+    url: https://github.com/Crown-OS/crownos-documentations/blob/main/docs/00-overview/project-status.md
+    about: Several components are known-broken or partly implemented. Check here before filing a bug.
+
+  - name: Security vulnerabilities
+    url: https://github.com/Crown-OS/crownos-documentations/blob/main/SECURITY.md
+    about: Do not open a public issue. Report privately via a GitHub security advisory.
+
+  - name: Questions and discussion
+    url: https://github.com/orgs/Crown-OS/discussions
+    about: For questions rather than defects. You can also file an issue tagged `question`.
