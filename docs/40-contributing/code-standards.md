@@ -2,7 +2,9 @@
 
 Per-language conventions, and the commands that check them.
 
-None of this is enforced by automation — there is no CI. Run it yourself.
+CI runs `cargo fmt --check` and `cargo test` on every push and pull request,
+and both block. Clippy runs too but is advisory for now. Run all of it locally
+first — it is faster than a runner round trip.
 
 ---
 

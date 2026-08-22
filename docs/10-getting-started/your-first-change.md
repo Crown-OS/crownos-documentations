@@ -110,7 +110,7 @@ need easing, use the one in the crate you are in.
 
 ## 6. Check it locally
 
-There is no CI. Everything is on you:
+CI will run these too, but locally is faster:
 
 ```bash
 cargo fmt --all
@@ -161,8 +161,8 @@ Copy the body from
 [`templates/.github/PULL_REQUEST_TEMPLATE.md`](../../templates/.github/PULL_REQUEST_TEMPLATE.md).
 It is not installed in the repos yet, so GitHub will not fill it in for you.
 
-Say explicitly which checks you ran and what they reported. Since there is no CI,
-that statement is the only evidence a reviewer has.
+CI reports the mechanical checks. Say what you verified by hand that it cannot —
+which compositor you ran under, and what you saw.
 
 Open it as a **Draft** if you want early feedback — that is encouraged.
 

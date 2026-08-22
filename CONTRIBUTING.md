@@ -19,10 +19,12 @@ that does not compile as your first task.
 
 One maintainer approval is required before merge.
 
-> There is currently **no CI, no CODEOWNERS file, and no branch protection** in
-> any CrownOS repository. Every check described in this document is one you run
-> locally, and review is done by a human reading your diff. If that changes, this
-> page changes with it.
+> CI runs on every push and pull request, from reusable workflows in
+> [`Crown-OS/.github`](https://github.com/Crown-OS/.github). **`rustfmt` and the
+> test suite block; clippy is advisory for now.** There is still **no CODEOWNERS
+> file and no branch protection**, so approval is enforced by convention rather
+> than by GitHub. Run the checks locally anyway — it is faster than waiting for
+> a runner.
 
 ---
 
@@ -309,6 +311,13 @@ shellcheck path/to/script.sh
 
 Applies to CrownOS-authored scripts. The profile is currently unmodified upstream
 archiso, so there is little to check yet.
+
+---
+
+## CI
+
+How it is wired, what blocks a merge, and how releases work:
+[CI and releases](docs/40-contributing/ci.md).
 
 ---
 

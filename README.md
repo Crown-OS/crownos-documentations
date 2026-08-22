@@ -73,7 +73,7 @@ docs/
   10-getting-started/   Toolchain, checkout layout, building, first patch
   20-architecture/      How the pieces fit and talk to each other
   30-components/        One page per repository
-  40-contributing/      Workflow, code standards, testing, doc style
+  40-contributing/      Workflow, code standards, testing, CI, doc style
   50-reference/         Config schema, env vars, keybindings, glossary
   60-users/             Installing and using CrownOS
 templates/.github/      Issue and PR templates to copy into other repos

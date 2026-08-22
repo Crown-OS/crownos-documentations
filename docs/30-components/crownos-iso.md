@@ -84,8 +84,9 @@ image. See [SECURITY.md](../../SECURITY.md).
 
 ## Building it
 
-**There is no build script, Makefile or CI in this repository.** The profile is
-consumed by the external `mkarchiso` tool from the `archiso` package:
+CI here runs `shellcheck` only. **There is no build script or Makefile, and CI
+does not build the image** — the profile is consumed by the external `mkarchiso`
+tool from the `archiso` package:
 
 ```bash
 sudo pacman -S archiso

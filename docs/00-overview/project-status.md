@@ -169,15 +169,37 @@ with no effect, the three declared signals are never emitted, and
 
 ## Infrastructure gaps
 
-### No CI, anywhere
+### CI
 
-**No repository in the organization has a `.github/` directory.** That means no
-GitHub Actions, no issue templates, no pull request template, no CODEOWNERS, no
-dependabot, no branch protection artifacts.
+Every repository runs CI on push and pull request, via reusable workflows in
+[`Crown-OS/.github`](https://github.com/Crown-OS/.github).
 
-Every check in [CONTRIBUTING.md](../../CONTRIBUTING.md) is one you run locally.
-Templates you can copy into repos live in
-[`templates/.github/`](../../templates/.github).
+| Repos | Checks |
+|---|---|
+| The 11 Rust repos | `cargo fmt --check` · build · clippy · `cargo test` |
+| crownos-website | `bun install` · `biome check` · `next build` |
+| crowncrate-android | `assembleDebug` · unit tests · APK artifact |
+| crownos-documentations | relative-link check · status-marker consistency |
+| crownos-iso | shellcheck |
+
+Two things to know:
+
+- **rustfmt blocks, clippy does not.** Roughly 15,000 lines have never been
+  linted, so `-D warnings` would make every repo red for reasons unrelated to
+  the change under review. Clippy runs and reports to the job summary. Flipping
+  it to blocking is a one-line change in `rust.yml`.
+- **`crowncrate-linux` and `lls-protocol` are red on purpose.** They do not
+  compile; the badge reflects that rather than hiding it.
+
+CD is deliberately minimal: pushing a `v*` tag to `crownbar`, `crowndock`,
+`crownotify`, `crowndictator` or `crownpositor` builds a release binary and
+attaches a tarball to a draft GitHub Release. Nothing is published to crates.io,
+the AUR, or as an ISO.
+
+Still absent: **CODEOWNERS**, **dependabot**, **branch protection**, and
+installed issue/PR templates — those are staged in
+[`templates/.github/`](../../templates/.github) but not yet copied into the
+repos.
 
 ### No toolchain pin
 

@@ -163,19 +163,24 @@ page.
 
 ## Checking your changes
 
-There is no CI. Before opening a PR:
+CI checks two things automatically: that every relative link resolves, and that
+each component page's status marker matches the component map and the index. It
+also prints every mention of CI, CODEOWNERS, sign-off and DCO to the job summary
+for a human to review.
+
+To run those locally first:
 
 ```bash
 # No dead internal links
 grep -ro '](\.\{1,2\}/[^)]*' docs/ README.md CONTRIBUTING.md
 
-# No claims about automation that does not exist
+# Every automation claim, for review
 grep -riE 'CI |CODEOWNERS|sign-off|DCO' docs/ CONTRIBUTING.md
 ```
 
-The second must only match text describing those things as absent or planned. If
-you have written "CI will reject…" anywhere, that is the bug this check exists to
-find.
+The second is advisory — a human decides. Each hit must describe what is
+actually configured; an unqualified "CI will reject…" for something CI does not
+check is the bug this exists to find.
 
 Then re-read your page as someone who has never seen the codebase. The most
 common failure in these docs is assuming context that only exists in the author's

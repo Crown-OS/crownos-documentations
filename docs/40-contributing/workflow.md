@@ -9,12 +9,21 @@ detail.
 
 ## Before anything else
 
-**There is no CI in any CrownOS repository.** No GitHub Actions, no CODEOWNERS,
-no branch protection, no PR template installed. Every check is one you run
-locally, and every claim you make about having run it is taken on trust.
+**CI runs on every push and pull request**, from reusable workflows in
+[`Crown-OS/.github`](https://github.com/Crown-OS/.github). For Rust repos that
+is `cargo fmt --check`, a build, clippy, and `cargo test`.
 
-That makes the "what I ran and what it said" section of your PR description the
-most important part of it.
+Two caveats worth internalising:
+
+- **Clippy does not block yet.** It runs and reports to the job summary, but a
+  warning will not fail your PR. Read it anyway.
+- **There is no CODEOWNERS and no branch protection.** Approval is enforced by
+  convention, not by GitHub.
+
+Run the checks locally before pushing — it is faster than a round trip through a
+runner, and the "what I ran and what it said" section of your PR description
+still carries weight for anything CI cannot check, like whether the bar actually
+renders.
 
 ---
 
@@ -92,6 +101,8 @@ Scopes are in [CONTRIBUTING.md](../../CONTRIBUTING.md#scopes).
 ---
 
 ## 5. Check locally
+
+CI runs these too — see [CI and releases](ci.md) — but locally is faster.
 
 ```bash
 cargo fmt --all

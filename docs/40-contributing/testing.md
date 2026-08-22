@@ -20,8 +20,10 @@ otherwise.
 | crownos-website | — | 0 | No test framework at all |
 | crowncrate-android | — | 2 | Untouched Android Studio template stubs |
 
-There is **no CI, no fixtures directory, no test runner script, and no coverage
-tooling**. Nothing runs these except you.
+CI runs `cargo test --all` on every push and pull request and it blocks, so a
+failing test stops a merge. There is still **no fixtures directory, no test
+runner script, and no coverage tooling** (`cargo-llvm-cov` and `tarpaulin` are
+both absent).
 
 ---
 
@@ -155,8 +157,8 @@ because their inputs are just text.
 
 ## Reporting results
 
-Since there is no CI, your PR description is the only record that anything was
-checked. Be specific:
+CI covers `cargo test`, but not whether the thing actually works on screen. Use
+the PR description for what CI cannot check, and be specific:
 
 ```
 cargo test --all             → 42 passed, 0 failed

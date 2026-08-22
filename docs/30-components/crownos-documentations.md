@@ -21,7 +21,7 @@ docs/
   10-getting-started/   Toolchain, checkout layout, building, first patch
   20-architecture/      How the pieces fit and talk to each other
   30-components/        One page per repository
-  40-contributing/      Workflow, code standards, testing, doc style
+  40-contributing/      Workflow, code standards, testing, CI, doc style
   50-reference/         Config schema, env vars, keybindings, glossary
   60-users/             Installing and using CrownOS
 templates/.github/      Issue and PR templates to copy into other repos
@@ -57,18 +57,17 @@ deliberate decision.
 
 ### Checking your changes
 
-There is no CI. Before opening a PR:
+CI runs a relative-link check and a status-marker consistency check on every
+push. Both are in `Crown-OS/.github`'s `docs.yml`. To run the link check
+yourself before pushing:
 
 ```bash
-# No dead internal links
 grep -ro '](\.\{1,2\}/[^)]*' docs/ README.md CONTRIBUTING.md
-
-# No claims about automation that does not exist
-grep -riE 'CI |CODEOWNERS|sign-off|DCO' docs/ CONTRIBUTING.md
 ```
 
-The second check should only match text that describes those things as absent or
-planned.
+CI also prints every mention of CI, CODEOWNERS, sign-off and DCO to the job
+summary for review. Each one must describe what is actually configured — an
+unqualified "CI will reject…" is a bug.
 
 If you document a command, run it first.
 

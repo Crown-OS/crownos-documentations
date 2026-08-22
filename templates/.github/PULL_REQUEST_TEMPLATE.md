@@ -1,8 +1,9 @@
 <!--
   CrownOS pull request template.
 
-  There is no CI in any CrownOS repository, so the Testing section below is the
-  only record that anything was verified. Please be specific there.
+  CI covers fmt, build and tests. The Testing section below is for what CI
+  cannot check — which compositor you ran under, and what you actually saw.
+  Please be specific there.
 -->
 
 ## Closes

@@ -3,8 +3,9 @@
 Canonical GitHub templates for the Crown-OS organization, kept here so there is
 one copy to edit.
 
-**No repository has a `.github/` directory yet.** These are staged for you to
-copy where you want them.
+Every repository now has a `.github/workflows/` directory (CI callers), but
+**none of them has the issue or pull request templates installed yet.** These
+are staged for you to copy where you want them.
 
 ```
 .github/
@@ -37,10 +38,10 @@ copying the body by hand.
 
 ## What is deliberately not here
 
-**No GitHub Actions workflows.** The documentation describes checks as commands
-you run locally, because that is what is true today. Adding CI is worthwhile
-work, but the docs and the automation should land together rather than the docs
-claiming coverage that does not exist.
+**No GitHub Actions workflows.** Those live in
+[`Crown-OS/.github`](https://github.com/Crown-OS/.github) as reusable workflows,
+called by a thin `.github/workflows/ci.yml` in each repo. This directory is for
+the human-facing templates only.
 
 **No CODEOWNERS.** Review is by a human reading the diff; there is no branch
 protection to enforce ownership.
