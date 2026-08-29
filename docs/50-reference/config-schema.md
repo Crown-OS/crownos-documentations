@@ -80,6 +80,7 @@ without a restart.
 | `keybinds` | `Vec<Binding>` | `[]` |
 | `window_rules` | `Vec<WindowRule>` | `[]` |
 | `outputs` | `Vec<OutputSetting>` | `[]` |
+| `startup` | `Vec<String>` | `[]` |
 
 `LayoutMode`:
 
@@ -155,10 +156,27 @@ This exact shape is covered by a test in the crate, so it is guaranteed to parse
 )
 ```
 
-> **Schema skew.** `crownpositor` reads `config.compositor.startup` to launch the
-> bar, wallpaper and notification daemon, but there is **no `startup` field** in
-> this schema. The two checkouts do not compile together as-is. See
-> [Project status](../00-overview/project-status.md).
+`startup` is the list of command lines spawned once the session is up. Each entry
+is one command, exec'd directly rather than through a shell — so there is no
+globbing and no `$VAR`, but quotes are honoured because wallpaper paths have
+spaces in them. Blank entries are dropped.
+
+```ron
+(
+    startup: [
+        "crownbar",
+        "crowndock",
+        "swaybg -i \"/home/me/My Pictures/wall.png\"",
+    ],
+)
+```
+
+> This field was **missing until now**, and it is a good illustration of what
+> multi-repo drift looks like. `crownpositor` read `compositor.startup` and
+> shipped `config/src/startup.rs` to parse it, but the matching field was never
+> added to `crownos-config` — so the compositor could not compile against it at
+> all. Nobody noticed, because `crownpositor`'s committed `[patch]` pointed at a
+> path that did not exist, so the build failed earlier for an unrelated reason.
 
 ---
 

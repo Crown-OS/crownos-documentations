@@ -201,7 +201,7 @@ Two details worth copying:
 
 ## Writing a new shell component
 
-1. Depend on `crownshell` by path (`{ path = "../crownshell" }`) — that is what
+1. Depend on `crownshell` from crates.io (`crownshell = "0.3"`) — that is what
    `crownotify` and `crowndictator` do, and it means your changes to the
    framework are visible immediately. The git-URL form used by `crownbar` and
    `crowndock` pins an old revision.

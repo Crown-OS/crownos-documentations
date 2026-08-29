@@ -185,20 +185,44 @@ changes a clear summary is enough.
 
 ## Working across repositories
 
-Some changes span repos — for example, updating `crownshell`'s `request_frame`
-signature affects `crownotify` and `crowndictator`.
+Some changes span repos — updating `crownshell`'s `request_frame` signature
+affects `crownotify` and `crowndictator`, and that exact change is what broke
+`crownotify` for months.
 
-When that happens:
+### Seeing your change locally
 
-1. Open the `crownshell` PR first and say in the description which downstream
+Every crate depends on a **published crates.io version**, so a local edit to
+`crownshell` is invisible to `crownbar` until you say otherwise. Do not change
+the dependency in `Cargo.toml` — put the override in a `.cargo/config.toml`
+**above** your checkouts:
+
+```toml
+# ~/src/crownos/.cargo/config.toml   (untracked, in no repo)
+[patch.crates-io]
+crownshell = { path = "crownshell" }
+```
+
+`crownos-setup bootstrap.sh --dev` writes it. Full detail:
+[Workspace setup](../10-getting-started/workspace-setup.md#developing-across-repositories).
+
+### Getting it merged
+
+1. Open the `crownshell` PR first, and say in the description which downstream
    repos it breaks.
 2. Open the downstream PRs referencing it.
 3. Ask a maintainer to sequence the merges.
 
-Note that `crownbar` and `crowndock` consume `crownshell` by **git URL with no
-rev**, so they will not see your change until their lockfiles are updated — and
-when they are, they may break. See
-[Dependency graph](../20-architecture/dependency-graph.md#version-skew).
+CI helps here: `crownotify`, `crowndictator` and `crownpositor` clone their
+dependencies and patch to them, so their pull requests build against the current
+state of `crownshell`/`crownos-config` rather than the last release. A breaking
+change shows up on the downstream PR rather than after publishing.
+
+### Then release in order
+
+A downstream crate cannot be *published* until its dependency is on crates.io —
+`release.yml` deliberately builds against published versions only. So the merge
+order and the release order are the same: `crownshell` first, then everything
+that depends on it. See [Releasing](releasing.md#publish-order).
 
 ---
 

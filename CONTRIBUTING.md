@@ -5,7 +5,7 @@ to every repository in the [Crown-OS](https://github.com/Crown-OS) organization.
 
 New here? Read [Project status](docs/00-overview/project-status.md) first. It
 tells you what actually builds today, which saves you from picking up a component
-that does not compile as your first task.
+that is a bare skeleton as your first task.
 
 ---
 
@@ -31,9 +31,7 @@ One maintainer approval is required before merge.
 ## Quickstart
 
 ```bash
-# 1. Fork the target repo on GitHub, then clone your fork
-#    into a FLAT SIBLING LAYOUT — this matters, see below.
-mkdir -p ~/src/crownos && cd ~/src/crownos
+# 1. Fork the target repo on GitHub, then clone your fork. Anywhere is fine.
 git clone git@github.com:<you>/<repo>.git
 
 # 2. Create a branch
@@ -50,17 +48,21 @@ git rebase origin/main
 # 5. Open a PR — mark as Draft if work is still in progress
 ```
 
-**The flat sibling layout is not optional.** Several crates declare
-`path = "../crownshell"` and `path = "../crownos-config"` dependencies. If your
-checkouts are not siblings of each other, those crates will not build. See
-[Workspace setup](docs/10-getting-started/workspace-setup.md).
+**Any layout works.** Crates depend on published crates.io versions, so a single
+`git clone` builds anywhere. You only need siblings if you are changing
+`crownshell` or `crownos-config` and want a component to see it — and then the
+override goes in a `.cargo/config.toml` *above* your checkouts, never in a
+committed `Cargo.toml`. See
+[Workspace setup](docs/10-getting-started/workspace-setup.md#developing-across-repositories).
 
 ---
 
 ## Project layout
 
-CrownOS is a **multi-repo** organization — 16 repositories, no monorepo, no
-umbrella Cargo workspace. Full detail with status markers is in the
+CrownOS is a **multi-repo** organization — 17 repositories, no monorepo, no
+umbrella Cargo workspace. Crates depend on each other by published crates.io
+version, never by path or git, which is what makes every checkout resolve
+identically. Full detail with status markers is in the
 [Component map](docs/00-overview/component-map.md); the short version:
 
 | Repository | Purpose | Language | Default branch |
@@ -81,6 +83,7 @@ umbrella Cargo workspace. Full detail with status markers is in the
 | [`crownos-iso`](docs/30-components/crownos-iso.md) | archiso profile | Shell | `main` |
 | [`crownos-website`](docs/30-components/crownos-website.md) | Landing page | TypeScript | `main` |
 | [`crownos-documentations`](docs/30-components/crownos-documentations.md) | This repo | Markdown | `main` |
+| [`crownos-setup`](https://github.com/Crown-OS/crownos-setup) | Cross-distro setup, native deps | Shell / Nix | `main` |
 
 **Every repository defaults to `main`.** The nine that used `master` were renamed
 in August 2026; if you have an older clone, see
@@ -276,7 +279,8 @@ cargo test --all
 
 - Follow `rustfmt` defaults. The one `rustfmt.toml` in the org
   (`crowncrate-linux`) is a legacy artifact and should not be copied.
-- Edition 2024 for all new crates. Minimum toolchain is **Rust 1.85**.
+- Edition 2024 for all new crates. Minimum toolchain is **Rust 1.88**, pinned
+  per repo in `rust-toolchain.toml`.
 - Document the *why*. The best-documented crate in the org is
   [`crownos-config`](docs/30-components/crownos-config.md) — read it before
   deciding how much to write.
@@ -352,9 +356,14 @@ whether it touches one repo or several.
 
 ## Releases and changelog
 
-There is currently **one tag in the entire organization** (`crownshell v0.2.0`),
-no `CHANGELOG.md` anywhere, and no release automation. Nothing is published to
-crates.io or the AUR.
+`crownshell` is published on crates.io (0.2.0, with docs.rs builds) and carries
+the organization's only git tag. The remaining crates are being published now —
+the order, and what blocks each one, is in
+[Releasing](docs/40-contributing/releasing.md).
+
+A `v*` tag runs `publish.yml`, which pushes to crates.io, and `release.yml`,
+which attaches a binary tarball to a draft GitHub Release. There is no
+`CHANGELOG.md` yet and nothing is published to the AUR.
 
 Conventional Commits are adopted now so that changelog generation becomes possible
 later. When releases begin, changelogs will be published in this repository.

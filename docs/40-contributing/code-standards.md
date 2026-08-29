@@ -10,7 +10,7 @@ first — it is faster than a runner round trip.
 
 ## Rust
 
-Twelve of sixteen repositories.
+Twelve of seventeen repositories.
 
 ```bash
 cargo fmt --all
@@ -48,7 +48,8 @@ file returns nothing. Lint policy is by convention only.
 ### Language
 
 - **Edition 2024** for all new crates.
-- **Minimum Rust 1.85.** Only `crownshell` declares `rust-version`; edition 2024
+- **Minimum Rust 1.88.** Every crate declares `rust-version` and pins a
+  toolchain in `rust-toolchain.toml`; edition 2024
   requires it regardless. There is no `rust-toolchain.toml` in any repo.
 - `crownpositor` uses let-chains and `resolver = "3"`.
 

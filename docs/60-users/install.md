@@ -23,8 +23,8 @@ no CrownOS repository.
 
 Building it produces a generic Arch rescue image.
 
-Nothing in the organization is packaged: no PKGBUILDs, no AUR entries, no
-crates.io releases, no `.deb`. There is one git tag in the whole project.
+There are no PKGBUILDs, no AUR entries and no `.deb`. What there *is* is
+crates.io — see [Install with cargo](#install-with-cargo) below.
 
 ### About the download page
 
@@ -34,6 +34,45 @@ ARM aarch64 2.1 GB — across five mirrors at `dl.crownos.org` and
 
 **None of those exist.** They are placeholder copy. See
 [Project status](../00-overview/project-status.md#documentation-drift).
+
+---
+
+## Install with cargo
+
+The quickest path on any distribution. `crownos-setup` installs the system
+libraries CrownOS links against, then `cargo install`s the components:
+
+```bash
+git clone https://github.com/Crown-OS/crownos-setup && cd crownos-setup
+./bootstrap.sh --user
+```
+
+It reads `/etc/os-release` and dispatches to `pacman`, `apt`, `dnf` or `zypper`,
+so Arch, Debian, Ubuntu, Fedora, openSUSE and their derivatives all work. There
+is also a Nix flake (`nix develop github:Crown-OS/crownos-setup`) and a container
+image. See [Prerequisites](../10-getting-started/prerequisites.md).
+
+To inspect your machine without changing it:
+
+```bash
+./bootstrap.sh --check
+./bootstrap.sh --user --dry-run
+```
+
+If you would rather do it by hand, install the native dependencies for your
+distro and then:
+
+```bash
+cargo install crownbar crowndock crownotify crowndictator
+```
+
+Do **not** skip the native dependencies. `cargo install` compiles from source and
+will fail at link time without them — `crownpositor` in particular needs libdrm,
+libinput, libseat, libudev and pixman.
+
+> **`crowndictator` downloads a lot.** Its build fetches a prebuilt ONNX Runtime,
+> and its first run fetches 700 MB (CPU) or 2.5 GB (GPU) of model weights into
+> `~/.cache/huggingface/hub`. `crowndictator --demo` skips the model entirely.
 
 ---
 

@@ -44,7 +44,7 @@ extension offers to fill it.
 Two things are worth knowing:
 
 1. **Neither of the other two halves works.**
-   [`crowncrate-linux`](crowncrate-linux.md) does not compile and has no
+   [`crowncrate-linux`](crowncrate-linux.md) compiles but implements nothing, and has no
    discovery or pairing; [`crowncrate-android`](crowncrate-android.md) is an
    untouched template with no network permission. A browser extension has nothing
    to connect to yet.

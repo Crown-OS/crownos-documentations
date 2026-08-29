@@ -35,7 +35,7 @@ restarts.
 > `log::warn!` output is invisible by default. Add the init if you need to debug
 > it.
 
-`crownshell` is a git dependency with no rev or tag. Its lockfile entry has **no
+`crownshell` is a crates.io dependency (`"0.3"`). It used to be a git dependency with no rev or tag, whose lockfile entry had **no
 `source` line**, meaning the lock was generated against a local path checkout
 rather than the git URL — manifest and lock have diverged. See
 [Dependency graph](../20-architecture/dependency-graph.md#version-skew).

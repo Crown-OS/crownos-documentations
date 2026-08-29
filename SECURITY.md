@@ -43,9 +43,13 @@ and no transport encryption**. Handled actions include:
 - `VOLUME` — shells out to `pactl set-sink-volume`
 - `CLIPBOARD`, `MEDIA`, `OPEN`, `OTPSYNC`, `MONITOR`
 
-Anyone on the same network can shut the machine down. The daemon does not
-currently compile, so this is not exploitable as shipped — but do not run a fixed
-build on an untrusted network. See
+Anyone on the same network can shut the machine down.
+
+**This changed in August 2026.** The crate previously did not compile, and that
+was the only thing preventing exploitation. It compiles now. Nothing starts it
+automatically and it is published only as a `0.0.0` placeholder, so the exposure
+is limited to anyone who deliberately runs it — but the "it doesn't build"
+mitigation is gone. Do not run it on an untrusted network. See
 [crowncrate-linux](docs/30-components/crowncrate-linux.md).
 
 ### crownos-iso — live-medium defaults

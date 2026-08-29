@@ -120,9 +120,10 @@ Please read [SECURITY.md](../../SECURITY.md) before running anything on an
 untrusted network. In brief:
 
 - `crowncrate-linux` accepts **unauthenticated, unencrypted** commands on TCP
-  port 5252, including remote shutdown. It does not compile today, so this is not
-  currently exploitable — but do not run a fixed build on a shared network until
-  pairing exists.
+  port 5252, including remote shutdown. It used to not compile, which was the
+  only thing stopping it; **that is no longer true**. Nothing starts it
+  automatically and it ships only as a `0.0.0` placeholder, but do not run it on
+  a shared network until pairing exists.
 - The ISO profile carries upstream Arch's live-medium defaults: empty root
   password, root autologin, permissive sshd. Appropriate for a rescue image, not
   for an installed system.

@@ -73,7 +73,8 @@ Being direct about this saves you time:
   notification centre.
 - **The phone bridge does not work.** Neither the Linux daemon nor the Android
   app is functional; they have never talked to each other.
-- **Nothing is packaged.** No crates.io, no AUR, no releases.
+- **Packaging has just started.** `crownshell` is on crates.io; the rest is
+  being published now. No AUR, no ISO, no `.deb`.
 
 What *does* work, and works well, is the compositor, the shell framework, the
 config system, and voice dictation. See

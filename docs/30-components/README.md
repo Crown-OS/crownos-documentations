@@ -21,10 +21,10 @@ into CrownOS, and known limitations.
 
 ## Ecosystem
 
-- [crowncrate-linux](crowncrate-linux.md) — **Broken** — phone-bridge daemon
+- [crowncrate-linux](crowncrate-linux.md) — **Skeleton** — phone-bridge daemon
 - [crowncrate-android](crowncrate-android.md) — **Skeleton** — Android companion
 - [crowncrate-chrome](crowncrate-chrome.md) — **Empty** — browser companion
-- [lls-protocol](lls-protocol.md) — **Broken** — media streaming protocol
+- [lls-protocol](lls-protocol.md) — **Skeleton** — media streaming protocol
 
 ## Project
 

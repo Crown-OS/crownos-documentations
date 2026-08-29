@@ -1,6 +1,6 @@
 # lls-protocol
 
-**Status: Broken** — does not compile · Rust · default branch `main` ·
+**Status: Skeleton** — compiles, but does almost nothing · Rust · default branch `main` ·
 [repo](https://github.com/Crown-OS/lls-protocol)
 
 A low-latency audio/video streaming protocol, intended to carry screen mirroring
@@ -87,9 +87,9 @@ drain or pop.
 
 ---
 
-## Why it does not compile
+## What was wrong, and what was fixed
 
-Three problems, in the order you hit them.
+Three problems, in the order you hit them. All are fixed; the crate compiles.
 
 **1. The root package has no targets.** The root `Cargo.toml` declares both a
 `[workspace]` and a `[package]` named `lls-protocol`, but there is no `src/` at

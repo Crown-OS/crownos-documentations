@@ -1,12 +1,18 @@
 # Build and run
 
 Per-component commands. Assumes you have installed the
-[prerequisites](prerequisites.md) and used the
-[flat sibling layout](workspace-setup.md).
+[prerequisites](prerequisites.md) — `crownos-setup`'s `bootstrap.sh --dev` does
+that and the checkout in one step.
 
-Components marked **Broken** in
-[Project status](../00-overview/project-status.md) are omitted — they do not
-build, and the reasons are documented there.
+Every component now builds from a plain clone, anywhere on disk, because crates
+depend on published crates.io versions rather than on relative paths. You only
+need a particular layout if you are changing `crownshell` or `crownos-config` and
+want a component to pick that change up — see
+[Workspace setup](workspace-setup.md#developing-across-repositories).
+
+Every Rust crate in the organization compiles as of this writing. Several are
+still **Skeleton** — they build and do almost nothing — and
+[Project status](../00-overview/project-status.md) says which.
 
 ---
 

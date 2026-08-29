@@ -1,6 +1,6 @@
 # crowncrate-linux
 
-**Status: Broken** — does not compile · Rust · default branch `main` ·
+**Status: Skeleton** — compiles, but does almost nothing · Rust · default branch `main` ·
 [repo](https://github.com/Crown-OS/crowncrate-linux)
 
 The desktop side of the CrownOS phone bridge. A daemon that holds a persistent
@@ -68,37 +68,30 @@ An `Action` trait with `fn handle_message(&self, message: Message)`, and an
 
 ---
 
-## Why it does not compile
+## What was wrong, and what was fixed
 
-`cargo check` reports two errors:
+`cargo check` used to report two errors, with two more defects behind them. All
+four are fixed and the crate compiles.
 
-```
-error[E0277]: `(dyn Action + 'static)` cannot be sent between threads safely
-  --> src/communication/server.rs:48:27
-error[E0277]: `Arc<Mutex<HashMap<Actions, Box<(dyn Action + 'static)>>>>`
-              is not an iterator
-  --> src/actions/action_manager.rs:33:23
-```
+1. **`Box<dyn Action>` could not cross a thread boundary.**
+   `communication/server.rs::listen` handed the `ActionManager` to a
+   `thread::spawn` closure and the trait object had no `Send` bound. `Action` is
+   now `: Send + Sync`.
+2. **`&mut self` escaped into a `'static` closure.** `ActionManager` derives
+   `Clone` — its `actions` field was already `Arc<Mutex<..>>`, so a clone shares
+   one table — and `listen` moves a handle in rather than borrowing `self`.
+3. **`notify` iterated an `Arc<Mutex<HashMap<..>>>` directly** and had an empty
+   loop body. It locks, iterates `.values()` and calls `handle_message`.
+4. **`unsubscribe` was inverted.** `retain(|&i, _| i == action)` kept only the
+   entry it was asked to remove; it is now `i != action`.
 
-1. **`communication/server.rs::listen`** hands the `ActionManager` to a
-   `thread::spawn` closure, but `Box<dyn Action>` carries no `Send` bound, so it
-   cannot cross a thread boundary. The `Action` trait needs `: Send + Sync`.
-2. **`actions/action_manager.rs::notify`** writes `for action in self.actions`,
-   iterating an `Arc<Mutex<HashMap<..>>>` directly. It needs a `.lock()` first —
-   and the loop body is empty regardless.
+The **glib conflict is gone too.** `Cargo.toml` declared `glib = "0.17"` while
+`gtk4 = "0.7"` requires 0.18, and the lockfile carried both. Nothing in `src/`
+referenced `glib`, so the direct dependency was removed outright.
 
-A third defect is a logic bug rather than a compile error:
-**`actions/action_manager.rs::unsubscribe`** uses
-`actions.retain(|&i, _| i == action)`, which keeps only the entry it was asked to
-remove.
-
-There is also a **latent dependency conflict**: `Cargo.toml` declares
-`glib = "0.17"` while `gtk4 = "0.7"` requires glib 0.18, and the lockfile
-contains both. It does not currently surface as an error because no code uses
-gtk4 — `src/ui/mod.rs` is empty — but it will as soon as a UI is written.
-
-The dependency set is also badly out of date — `gtk4` 0.7 dates from 2023, while
-the rest of the organization tracks current crates.
+Compiling is not the same as working: `src/lib.rs` and `src/ui/mod.rs` are empty,
+`src/predule.rs` is unreachable from `main.rs`, and the whole crate is 333 lines.
+It is published as a **0.0.0 placeholder** to hold the name.
 
 ---
 
@@ -145,8 +138,9 @@ Implementing this interface is well-scoped work.
 **There is no pairing, no authentication, and no encryption.** Any peer that can
 reach port 5252 can send a `SHUTDOWN` message and power the machine off.
 
-The crate does not compile, so this is not exploitable as shipped — but it must
-be addressed before it is. See [SECURITY.md](../../SECURITY.md).
+The crate now compiles, so this **is** reachable if anyone runs it. Nothing
+starts it automatically and it is published only as a 0.0.0 placeholder, but the
+"it doesn't build" mitigation is gone. See [SECURITY.md](../../SECURITY.md).
 
 ---
 

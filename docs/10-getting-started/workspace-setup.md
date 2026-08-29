@@ -1,77 +1,115 @@
 # Workspace setup
 
-**Read this before cloning anything.** Several CrownOS crates depend on each
-other by relative path. If your checkouts are not flat siblings, they will not
-build, and the error message will not tell you why.
+How to lay out your checkouts.
+
+**This page used to open with a warning that the layout was mandatory and that
+getting it wrong broke the build. That is no longer true**, and the reason is
+worth understanding, because it is the same reason everyone used to end up with
+a different build.
 
 ---
 
-## The required layout
+## What changed
 
-One directory, all repos as direct children, named exactly as the repository:
+CrownOS crates used to depend on each other by relative path
+(`crownshell = { path = "../crownshell" }`) or by unpinned git URL
+(`crownshell = { git = "…" }` with no `rev`). Both are reproducibility hazards:
+
+- A **path** dependency builds against whatever is in your working tree. Two
+  contributors with different local edits got different builds, and there was no
+  version number involved at all.
+- An **unpinned git** dependency floats on whatever `main` is. `crownbar` and
+  `crowndock` were locked eight commits behind `crownshell` and would have moved
+  the moment anyone ran `cargo update`.
+
+Both are gone. Every CrownOS crate now depends on a **published version**:
+
+```toml
+crownshell = "0.3"
+crownos-config = "0.2"
+```
+
+So a plain `git clone` of any single repository builds, anywhere on disk, with no
+siblings required.
+
+---
+
+## Just working on one repo
+
+```bash
+git clone git@github.com:<you>/crownbar.git
+cd crownbar && cargo build
+```
+
+That is the whole thing. Dependencies come from crates.io.
+
+---
+
+## Developing across repositories
+
+If you are changing `crownshell` or `crownos-config` and want a component to see
+that change, you need an override. **Do not edit the dependency in `Cargo.toml`**
+— that is a committed file, and a local edit to it is exactly how the two
+checkouts drift apart again.
+
+Instead, put a `[patch.crates-io]` table in a `.cargo/config.toml` **above** your
+checkouts. Cargo walks up from the working directory to find it, so one file
+covers every repo:
 
 ```
 ~/src/crownos/
-├── crownpositor/
+├── .cargo/config.toml      <- the override; in no repo's git history
 ├── crownshell/
 ├── crownos-config/
 ├── crownbar/
-├── crowndock/
-├── crownotify/
-├── crowndictator/
-├── crownuikit/
-├── crownlauncher/
-├── crowncrate-linux/
-├── crowncrate-android/
-├── lls-protocol/
-├── crownos-iso/
-├── crownos-website/
-└── crownos-documentations/
+└── …
 ```
 
-The parent directory name does not matter. What matters is that
-`crownotify/../crownshell` resolves.
-
-## Why
-
-Three crates declare path dependencies that walk up one level:
-
-| Crate | Declaration | Resolves to |
-|---|---|---|
-| `crownotify` | `crownshell = { path = "../crownshell" }` | `<parent>/crownshell` |
-| `crowndictator` | `crownshell = { path = "../crownshell" }` | `<parent>/crownshell` |
-| `crowndictator` | `crownos-config = { path = "../crownos-config" }` | `<parent>/crownos-config` |
-| `crownpositor` | `[patch."https://github.com/crown-os/crownos-config"]`<br>`crownos-config = { path = "../crownos-config" }` | `<parent>/crownos-config` |
-
-`crownpositor`'s manifest has an inline comment explaining the patch: it builds
-against "the checkout next door rather than the last push", so a change to
-`crownos-config` is visible to the compositor immediately.
-
-Get the layout wrong and the error names the path it looked for, which is the
-quickest way to see what went wrong:
-
-```
-error: failed to load source for dependency `crownos-config`
-Caused by:
-  unable to update /path/to/wrong/place/crownos-config
-Caused by:
-  failed to read /path/to/wrong/place/crownos-config/Cargo.toml
-Caused by:
-  No such file or directory (os error 2)
+```toml
+# ~/src/crownos/.cargo/config.toml
+[patch.crates-io]
+crownshell = { path = "crownshell" }
+crownos-config = { path = "crownos-config" }
 ```
 
-Note that **cargo canonicalises symlinks** before resolving `../`, so symlinking
-repos into a flat directory does not work — the checkouts have to genuinely be
-siblings on disk.
+`crownos-setup` writes it for you:
 
-`crownbar` and `crowndock` use git dependencies instead and will build standalone
-— but see the [version skew warning](#version-skew) below.
+```bash
+git clone https://github.com/Crown-OS/crownos-setup && cd crownos-setup
+./bootstrap.sh --dev
+```
+
+That clones every repository into `~/src/crownos` (override with `--prefix=DIR`),
+installs the native dependencies for your distro, and generates the file.
+
+Two things to know:
+
+- Paths in a config-file `[patch]` are resolved **relative to the directory
+  containing `.cargo/`**, not to the repo you are building.
+- Cargo prints `Patch … was not used in the crate graph` for repos that do not
+  depend on every patched crate. Harmless.
+
+To go back to building against the release, delete the file.
+
+### Why not a committed `[patch]`?
+
+`crownpositor` used to commit one:
+
+```toml
+[patch."https://github.com/crown-os/crownos-config"]
+crownos-config = { path = "../crownos-config" }
+```
+
+Two problems. It made a sibling checkout **mandatory** for everyone who cloned
+the repo — and when the path did not exist, `cargo build` failed outright rather
+than falling back. And it keyed the patch on `github.com/crown-os/…` while
+`crownshell`'s metadata says `github.com/Crown-OS/…`; cargo treats those as
+different sources, so a patch written against the other spelling silently does
+nothing.
 
 ---
 
-## Cloning
-
-### Everything at once
+## Cloning everything
 
 ```bash
 mkdir -p ~/src/crownos && cd ~/src/crownos
@@ -82,29 +120,15 @@ gh repo list Crown-OS --limit 200 --json name,sshUrl --jq '.[] | [.name, .sshUrl
     done
 ```
 
-`crowncrate-chrome` has no commits and will clone as an empty repository. That is
-expected.
-
-### Just what you need
-
-You rarely need all of them. Minimum sets:
-
-| Working on | Clone |
-|---|---|
-| `crownshell` itself | `crownshell` |
-| `crownbar` or `crowndock` | that repo alone (git deps) |
-| `crownotify` | `crownotify` + `crownshell` |
-| `crowndictator` | `crowndictator` + `crownshell` + `crownos-config` |
-| `crownpositor` | `crownpositor` + `crownos-config` |
-| `crownos-config` | `crownos-config` |
+`crowncrate-chrome` has no commits and clones as an empty repository. Expected.
 
 ### Forks
 
-If you are contributing, fork on GitHub and clone your fork under the **upstream
-repository name**, not the fork's name — the path dependencies use the repo name:
+Clone your fork under the **upstream repository name**. It no longer affects
+dependency resolution, but the `[patch.crates-io]` overlay looks for directories
+by crate name:
 
 ```bash
-cd ~/src/crownos
 git clone git@github.com:<you>/crownshell.git crownshell
 cd crownshell
 git remote add upstream git@github.com:Crown-OS/crownshell.git
@@ -114,22 +138,12 @@ git remote add upstream git@github.com:Crown-OS/crownshell.git
 
 ## Default branches
 
-**Every repository defaults to `main`.** There is nothing to remember.
+**Every repository defaults to `main`.**
 
-If you want to confirm for a given repo:
-
-```bash
-git remote show origin | grep 'HEAD branch'
-```
-
-### If you cloned before the rename
-
-Nine repositories used `master` until August 2026: `crownpositor`, `crownshell`,
-`crownbar`, `crowndock`, `crownlauncher`, `crownotify`, `crowndictator`,
-`crownuikit` and `crowncrate-linux`. A clone made before then still has a local
-`master` tracking a branch that no longer exists.
-
-To move an existing clone across:
+If you cloned before the August 2026 rename, nine repos (`crownpositor`,
+`crownshell`, `crownbar`, `crowndock`, `crownlauncher`, `crownotify`,
+`crowndictator`, `crownuikit`, `crowncrate-linux`) still have a local `master`
+tracking a branch that no longer exists:
 
 ```bash
 git branch -m master main
@@ -138,87 +152,37 @@ git branch -u origin/main main
 git remote set-head origin -a
 ```
 
-Nothing was rewritten — `main` points at the same commits `master` did — so this
-is a rename, not a history change. Your own feature branches are unaffected;
-rebase them onto `main` as usual.
+Nothing was rewritten, so this is a rename rather than a history change.
 
 ---
 
-## Version skew
+## Toolchain
 
-`crownbar` and `crowndock` declare:
-
-```toml
-crownshell = { git = "https://github.com/crown-os/crownshell" }
-```
-
-with **no `rev`, `tag` or `branch`**. Their committed lockfiles pin commit
-`de4ab90` at `crownshell` 0.1.0 — three commits behind current HEAD (0.2.0).
-
-Consequences:
-
-- As long as you do not run `cargo update`, they build against the old pinned
-  revision and are unaffected by `crownshell` changes.
-- The moment you run `cargo update`, they move to `crownshell` HEAD and may stop
-  compiling.
-- A change you make in your local `crownshell` checkout is **not** visible to
-  `crownbar` or `crowndock`, because they fetch from GitHub, not from `../`.
-
-If you need `crownbar` or `crowndock` to build against your local `crownshell`,
-add a patch to the crate's `Cargo.toml`:
+Every Rust repo pins its toolchain:
 
 ```toml
-[patch."https://github.com/crown-os/crownshell"]
-crownshell = { path = "../crownshell" }
+[toolchain]
+channel = "1.88.0"
+components = ["rustfmt", "clippy"]
 ```
 
-Do not commit that patch unless the change is meant to land together.
-
-There is also a live incompatibility between siblings: `crownotify` calls
-`request_frame` with two arguments, `crowndictator` with three, and current
-`crownshell` takes three. **They cannot both build against the same `crownshell`
-revision.** See
-[Project status](../00-overview/project-status.md#crownotify-does-not-build-against-current-crownshell).
-
----
-
-## A worked example
-
-Set up enough to build the compositor and run a bar inside it:
-
-```bash
-mkdir -p ~/src/crownos && cd ~/src/crownos
-
-git clone git@github.com:Crown-OS/crownos-config.git
-git clone git@github.com:Crown-OS/crownshell.git
-git clone git@github.com:Crown-OS/crownpositor.git
-
-# crownos-config is the foundation — build and test it first.
-cd crownos-config && cargo test && cd ..
-
-# crownshell has runnable examples that need no compositor of ours.
-cd crownshell && cargo run --example text_bar && cd ..
-
-# The compositor picks up ../crownos-config through its [patch] table.
-cd crownpositor && cargo build && cd ..
-```
-
-If `crownpositor` fails to resolve `crownos-config`, your layout is wrong —
-`crownos-config` must be a sibling of `crownpositor`, not inside it.
+rustup reads it and installs the right compiler on your first build. **1.88, not
+1.85** — edition 2024 only needs 1.85, but `vello 0.9` and `xilem 0.4` declare
+`rust-version = "1.88"`, and the dependency graph sets the floor.
 
 ---
 
 ## Config isolation while developing
 
-CrownOS components read `~/.config/crownos/`. To avoid a work-in-progress build
-scribbling over your real settings, point them somewhere else:
+CrownOS components read `~/.config/crownos/`. Point them elsewhere so a
+work-in-progress build cannot damage your real settings:
 
 ```bash
 export CROWN_CONFIG_DIR=/tmp/crownos-dev
 ```
 
-Every component honours this, because they all go through `crownos-config`. It is
-also what the test suite uses. See
+Every component honours it, because they all go through `crownos-config`. It is
+what the test suite uses, and what the Nix devShell sets. See
 [Environment variables](../50-reference/environment-variables.md).
 
 ---

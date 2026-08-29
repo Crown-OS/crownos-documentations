@@ -42,7 +42,7 @@ You need a working Vulkan or GL adapter — wgpu requires a real device.
 To run it you need any compositor supporting `wlr-layer-shell`: `crownpositor`,
 Hyprland, Sway, river, KWin, or most wlroots-based compositors.
 
-Minimum Rust **1.85** — the only crate in the org that declares an MSRV.
+Minimum Rust **1.88**, set by `vello 0.9` rather than by edition 2024.
 
 ---
 
@@ -153,8 +153,8 @@ Detail, including the popup pattern:
 `crownshell` is purely a Wayland client library. It does **not** depend on
 `crownos-config` — components read their own settings.
 
-Consumed by `crownbar` and `crowndock` via git URL (unpinned), and by
-`crownotify` and `crowndictator` via `path = "../crownshell"`.
+Consumed by `crownbar`, `crowndock`, `crownotify` and `crowndictator` as
+`crownshell = "0.3"` from crates.io. No path or git dependencies remain.
 
 ---
 
@@ -175,9 +175,9 @@ you're going to use it, expect breaking changes."*
 - **`bluer`, `battery` and `tracing` are declared and never used.** Leftovers
   from when `crownbar`'s code lived here. `bluer` alone pulls in a large D-Bus
   and BlueZ tree that you must still have installed to link.
-- **The README's install snippet is stale** — it says `crownshell = "0.1.0"`, but
-  the crate is 0.2.0 and is not published to crates.io. Use a git or path
-  dependency.
+- **`predule` is a typo that is now permanent public API.** The prelude module
+  is spelled `predule`, and 0.1.0 and 0.2.0 shipped it. 0.3.0 adds a correctly
+  spelled `prelude` and keeps `predule` as a deprecated re-export.
 
 ---
 

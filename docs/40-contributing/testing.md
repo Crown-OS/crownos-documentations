@@ -145,7 +145,7 @@ Worth knowing, both as risk and as opportunity:
   untested.
 - **Rendering.** Nothing does image comparison or golden-frame testing anywhere.
 - **Everything in `crownbar`, `crowndock`, `crownuikit`.** Zero tests.
-- **The phone bridge.** `crowncrate-linux` has no tests and does not compile;
+- **The phone bridge.** `crowncrate-linux` has no tests and implements nothing;
   `crowncrate-android` has only template stubs.
 - **The ISO.** No validation that the profile builds.
 

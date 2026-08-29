@@ -89,9 +89,11 @@ That branch is superseded by `CONTRIBUTING.md` on `main`.
 
 Being consistent about honesty, these pages have gaps too:
 
-- **No API reference.** Nothing is published to docs.rs, and there is no
-  generated rustdoc anywhere. The [Reference](../50-reference) section covers
-  configuration, environment variables and keybindings, not crate APIs.
+- **No API reference here.** `crownshell` has rustdoc on
+  [docs.rs](https://docs.rs/crownshell), and every crate published from now on
+  gets the same automatically. These pages do not duplicate it — the
+  [Reference](../50-reference) section covers configuration, environment
+  variables and keybindings, not crate APIs.
 - **No screenshots.** No page shows what CrownOS looks like.
 - **Component pages are written from source reading**, not from running every
   component on hardware. Where a build was not verified, the page says so.

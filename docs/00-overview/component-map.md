@@ -25,7 +25,7 @@ Used consistently across all documentation.
 | [crownshell](../30-components/crownshell.md) | **Early** | Layer-shell framework. Wraps Wayland boilerplate, paints with Vello, lays out text with Parley. Everything below is built on it. | `main` |
 | [crownbar](../30-components/crownbar.md) | **Partial** | Status bar — clock, battery, wifi, bluetooth, brightness, volume. Reads `/sys` directly. | `main` |
 | [crowndock](../30-components/crowndock.md) | **Partial** | Auto-hiding dock with drag-and-drop pinning. **Cannot launch applications.** | `main` |
-| [crownotify](../30-components/crownotify.md) | **Partial** | Notification daemon. Implements `org.freedesktop.Notifications` plus a CrownOS interface. Does not build against current `crownshell`. | `main` |
+| [crownotify](../30-components/crownotify.md) | **Partial** | Notification daemon. Implements `org.freedesktop.Notifications` plus a CrownOS interface. Builds against `crownshell` 0.3; the notification centre is still a no-op. | `main` |
 | [crowndictator](../30-components/crowndictator.md) | **Early** | Push-to-talk voice dictation. Local ASR via ONNX Runtime. | `main` |
 | [crownlauncher](../30-components/crownlauncher.md) | **Skeleton** | App launcher. Currently `cargo new` output. | `main` |
 | [crownuikit](../30-components/crownuikit.md) | **Early** | Widget kit for [xilem](https://github.com/linebender/xilem) — sidebar, sliders, toggles, selects. Intended for the settings panel. | `main` |
@@ -41,10 +41,10 @@ Used consistently across all documentation.
 
 | Repo | Status | Purpose | Default branch |
 |---|---|---|---|
-| [crowncrate-linux](../30-components/crowncrate-linux.md) | **Broken** | Desktop side of the phone bridge. TCP + CBOR on port 5252. | `main` |
+| [crowncrate-linux](../30-components/crowncrate-linux.md) | **Skeleton** | Desktop side of the phone bridge. TCP + CBOR on port 5252. | `main` |
 | [crowncrate-android](../30-components/crowncrate-android.md) | **Skeleton** | Android companion app. Currently an unmodified Android Studio template. | `main` |
 | [crowncrate-chrome](../30-components/crowncrate-chrome.md) | **Empty** | Planned browser extension for OTP sync. No commits. | — |
-| [lls-protocol](../30-components/lls-protocol.md) | **Broken** | Low-latency media streaming protocol (screen mirroring, second screen). RTP-shaped, UDP. | `main` |
+| [lls-protocol](../30-components/lls-protocol.md) | **Skeleton** | Low-latency media streaming protocol (screen mirroring, second screen). RTP-shaped, UDP. | `main` |
 
 ## Project
 
@@ -52,6 +52,7 @@ Used consistently across all documentation.
 |---|---|---|---|
 | [crownos-website](../30-components/crownos-website.md) | **Early** | Landing page. Next.js + Tailwind v4 + Biome, built with Bun. | `main` |
 | [crownos-documentations](../30-components/crownos-documentations.md) | **Early** | This repository. | `main` |
+| [crownos-setup](https://github.com/Crown-OS/crownos-setup) | **Stable** | Cross-distro native-dependency manifest, bootstrap script, Nix flake and CI container image. `deps.toml` is the single source for the package lists used by the script, CI and the docs. | `main` |
 
 ---
 
@@ -66,8 +67,8 @@ crownos-config ──(path)──────────────► crowndi
                                             │
                                             └──(path)──► crownpositor/compositor
 
-crownshell ──(git, unpinned)──► crownbar
-           ──(git, unpinned)──► crowndock
+crownshell ──(crates.io 0.3)──► crownbar
+           ──(crates.io 0.3)──► crowndock
            ──(path)───────────► crownotify
            ──(path)───────────► crowndictator
 
@@ -77,13 +78,19 @@ lls-protocol     ── no CrownOS dependencies
 crownlauncher    ── no dependencies at all
 ```
 
-Two consequences you will hit immediately:
+Every one of these edges is a **published crates.io version** — no `path`, no
+git URLs. That is deliberate, and recent. Until August 2026:
 
-1. **`path = "../crownshell"` requires flat sibling checkouts.** See
-   [Workspace setup](../10-getting-started/workspace-setup.md).
-2. **`crownbar` and `crowndock` pin `crownshell` by git URL with no rev or tag.**
-   Their lockfiles sit at `crownshell` 0.1.0 while `crownshell` is at 0.2.0. A
-   `cargo update` will move them onto HEAD and may break them.
+1. `crownotify`, `crowndictator` and `crownpositor` used relative `path`
+   dependencies, so they built against whatever was in your working tree and
+   carried no version at all.
+2. `crownbar` and `crowndock` pinned `crownshell` by git URL with **no rev or
+   tag**. Their lockfiles sat at `crownshell` 0.1.0, eight commits behind, and a
+   `cargo update` would have moved them onto HEAD.
+
+Shared dependency versions are now declared once in
+[`crown-versions.toml`](https://github.com/Crown-OS/.github/blob/main/crown-versions.toml)
+and enforced by CI.
 
 Detail: [Dependency graph](../20-architecture/dependency-graph.md).
 
@@ -108,7 +115,7 @@ See [Architecture overview](../20-architecture/overview.md) and
 
 | Language | Repos | Toolchain |
 |---|---|---|
-| Rust | 12 | Edition 2024, minimum Rust **1.85**. No `rust-toolchain.toml` anywhere — use a recent stable. |
+| Rust | 12 | Edition 2024, minimum Rust **1.88** (set by `vello 0.9`/`xilem 0.4`, not by the edition). Pinned per repo in `rust-toolchain.toml`. |
 | Kotlin | 1 | AGP 8.13.1, Kotlin 2.0.21, compileSdk 36, minSdk 29, JVM 11 |
 | TypeScript | 1 | Bun, Next.js 16, React 19, Tailwind v4, Biome 2.2 |
 | Shell / archiso | 1 | `archiso`, run as root on Arch |

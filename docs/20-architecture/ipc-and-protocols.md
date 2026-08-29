@@ -203,7 +203,7 @@ the only part of the crate with real logic, and only `insert` is implemented.
 
 ### Status
 
-**Skeleton, does not compile.** `MediaPacket::parse` is an empty private
+**Skeleton.** It compiles now, but does nothing: `MediaPacket::parse` is an empty private
 function. `Connection::connect` calls `UdpSocket::try_from(IpAddr)`, which does
 not exist. `DiscoveredDevice::discover` always returns an empty `Vec`.
 `client/src/lib.rs` and five server modules are zero bytes. `serde` is declared

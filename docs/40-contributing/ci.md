@@ -68,63 +68,89 @@ repos needs touching.
 
 ---
 
-## The sibling-checkout problem
+## How cross-repo dependencies are tested
 
-This is the part that makes CrownOS CI non-generic.
+CrownOS crates depend on each other by **published crates.io version** — no
+`path`, no git URLs. So a plain checkout of any repo builds on its own, and CI
+needs no special handling for most of them.
 
-Several crates declare `path = "../crownshell"` or `path = "../crownos-config"`.
-A plain `actions/checkout` puts the repo at the workspace root, where `../`
-resolves outside it and the build fails.
-
-So `rust.yml` checks the caller repo into a directory named after itself, then
-clones the named siblings alongside:
-
-```
-$GITHUB_WORKSPACE/
-├── crowndictator/     <- the repo under test
-├── crownshell/        <- sibling
-└── crownos-config/    <- sibling
-```
-
-Callers declare what they need:
-
-```yaml
-    uses: Crown-OS/.github/.github/workflows/rust.yml@main
-    with:
-      siblings: crownshell crownos-config
-```
+Three repos still clone their dependencies, though, and it is worth
+understanding why:
 
 | Repo | `siblings` |
 |---|---|
-| crownpositor | `crownos-config` |
-| crownotify | `crownshell` |
-| crowndictator | `crownshell crownos-config` |
+| `crownpositor` | `crownos-config` |
+| `crownotify` | `crownshell` |
+| `crowndictator` | `crownshell crownos-config` |
 | everything else | none |
 
-Siblings are cloned at their default branch, shallow. That means **CI tests
-against sibling `main`, not against your PR** — a cross-repo change needs
-coordinated PRs. See
-[Working across repositories](workflow.md#working-across-repositories).
+`rust.yml` clones each named sibling next to the repo under test and writes a
+`[patch.crates-io]` table at the workspace root:
+
+```toml
+# $GITHUB_WORKSPACE/.cargo/config.toml, generated
+[patch.crates-io]
+crownshell = { path = "crownshell" }
+```
+
+Two reasons this is worth the machinery:
+
+1. **It tests against the current state of the dependency, not the last
+   release.** A breaking change in `crownshell` shows up on `crownbar`'s pull
+   request rather than after publishing.
+2. **It lets CI pass before a version exists on crates.io.** `crownbar` declares
+   `crownshell = "0.3"`; without the override, CI could not go green until 0.3
+   was already published — and you would not want to publish something CI had
+   never built.
+
+This is the same mechanism `crownos-setup bootstrap.sh --dev` writes on a
+contributor's machine, so CI and local development resolve identically. That is
+the point: the old arrangement had committed `path` dependencies and committed
+`[patch]` tables, which meant CI, your checkout and a fresh clone could each
+resolve differently.
+
+**`release.yml` deliberately does none of this.** A released binary is built from
+published dependencies only, or it cannot be reproduced from its tag. That is why
+a repo cannot be released until everything it depends on is already on crates.io
+— see [Releasing](releasing.md#publish-order).
 
 ---
 
 ## Native dependencies
 
-`rust.yml` installs a base set on every Rust job:
+`rust.yml` installs a base apt set on every Rust job, and repos needing more pass
+a `packages` input:
 
-```
-pkg-config
-libwayland-dev wayland-protocols libxkbcommon-dev
-libvulkan-dev mesa-common-dev libegl1-mesa-dev libgbm-dev
-libfontconfig-1-dev libfreetype-dev
-libdbus-1-dev libbluetooth-dev
-libxcb1-dev libx11-dev
-```
-
-Repos needing more pass `packages`:
-
-| Repo | Extra |
+| Repo | Extra `packages` |
 |---|---|
+| crownpositor | `libdrm-dev libinput-dev libseat-dev libudev-dev libpixman-1-dev xwayland` |
+| crowndictator | `libasound2-dev libevdev-dev` |
+| crowncrate-linux | `libgtk-4-dev libglib2.0-dev libpango1.0-dev libgdk-pixbuf-2.0-dev libgraphene-1.0-dev` |
+| everything else | none |
+
+**Neither list is written here, and neither is written in `rust.yml` by hand.**
+Both come from
+[`crownos-setup/deps.toml`](https://github.com/Crown-OS/crownos-setup/blob/main/deps.toml)
+via `scripts/gen.py`, which also produces the
+[native packages page](../10-getting-started/native-packages.md) and the
+bootstrap script. To change what CI installs, edit `deps.toml`, regenerate, and
+copy `generated/ci-packages.txt` across.
+
+That indirection exists because the same list used to be maintained in three
+places and had already diverged:
+
+- CI installed **`libfontconfig-1-dev`**, which exists on neither Debian nor
+  Ubuntu. The first CI run would have failed on it.
+- CI omitted **`xwayland`** for `crownpositor`, despite the compositor enabling
+  smithay's `xwayland` feature.
+- `crowncrate-linux` passed only `libgtk-4-dev`, relying on the rest arriving
+  transitively.
+
+`libbluetooth-dev` is in the base set only because `crownshell` declares `bluer`
+and never uses it. Removing that dependency would shorten the list for every
+downstream repo.
+
+---|---|
 | crownpositor | `libdrm-dev libinput-dev libseat-dev libudev-dev libpixman-1-dev` |
 | crowndictator | `libasound2-dev libevdev-dev` |
 | crowncrate-linux | `libgtk-4-dev` |
@@ -146,7 +172,7 @@ level, so nothing touches a real config directory.
 
 **crowncrate-linux** and **lls-protocol** are **red on purpose**. Neither
 compiles. The badge should say so rather than hide it — the errors are documented
-in [Project status](../00-overview/project-status.md#known-broken-in-detail) and
+in [Project status](../00-overview/project-status.md#previously-broken-in-detail) and
 both are small.
 
 **crownbar** needs `ld.bfd` because of its committed `.cargo/config.toml`.
@@ -155,6 +181,9 @@ both are small.
 ---
 
 ## Releases
+
+Full detail, including publish order and known hazards:
+[Releasing](releasing.md).
 
 CD is deliberately minimal. Push a `v*` tag to `crownbar`, `crowndock`,
 `crownotify`, `crowndictator` or `crownpositor` and `release.yml`:
@@ -177,9 +206,8 @@ repository:
 
 ### Not automated
 
-- **No crates.io publish.** `crownshell` is the only crate with publish-ready
-  metadata, and publishing freezes the misspelled `predule` module as permanent
-  public API. Resolve that first.
+- **No AUR packages.** These are Arch-specific and remain the prerequisite for
+  the ISO shipping CrownOS packages rather than upstream archiso's rescue set.
 - **No website deploy.** `crownos-website` has no `output: "export"` in
   `next.config.ts`, so a static Pages deploy cannot work without a source change.
   CI builds it; deploying is a separate decision.
@@ -226,7 +254,7 @@ Worth knowing, and all reasonable contributions:
   automated bumps would make worse. Fix the pinning first — see
   [Dependency graph](../20-architecture/dependency-graph.md#version-skew).
 - **No MSRV job.** CI uses stable. Only `crownshell` declares
-  `rust-version = "1.85"`, and nothing verifies it.
+  `rust-version = "1.88"`, and `check-versions.py` verifies every repo agrees.
 - **No coverage.** `cargo-llvm-cov` and `tarpaulin` are both absent.
 - **Issue and PR templates are not installed.** They are staged in
   [`templates/.github/`](../../templates/.github).

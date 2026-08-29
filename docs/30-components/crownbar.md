@@ -37,7 +37,7 @@ existing desktop.
 > `rustflags = ["-C", "link-arg=-fuse-ld=bfd"]`. If you use `mold` or `lld`
 > globally, it is overridden here. You need `ld.bfd` from `binutils`.
 
-`crownshell` is a **git dependency with no rev or tag**; the lockfile pins commit
+`crownshell` is now `"0.3"` from crates.io. It used to be a **git dependency with no rev or tag** whose lockfile pinned commit
 `de4ab90` at version 0.1.0, three commits behind HEAD. Your local `crownshell`
 checkout is not used. See
 [Dependency graph](../20-architecture/dependency-graph.md#version-skew).

@@ -74,9 +74,12 @@ Smithay 0.7 is pulled with an explicit feature list: `backend_drm`,
 > needed; EDID make/model naming returns when the sys crate catches up. Do not
 > "fix" this by re-enabling the feature.
 
-`crownos-config` must be a **flat sibling** — the manifest patches the git
-dependency to `path = "../crownos-config"`. See
-[Workspace setup](../10-getting-started/workspace-setup.md).
+`crownos-config` comes from crates.io (`version = "0.2"`,
+`default-features = false`, so the xilem/vello stack stays out). The manifest
+used to commit a `[patch]` pointing at `../crownos-config`, which made a sibling
+checkout mandatory for everyone who cloned the repo — and hard-failed when the
+path was absent. To build against a local `crownos-config`, use the overlay in
+[Workspace setup](../10-getting-started/workspace-setup.md#developing-across-repositories).
 
 ---
 

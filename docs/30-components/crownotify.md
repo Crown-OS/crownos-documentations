@@ -1,6 +1,6 @@
 # crownotify
 
-**Status: Partial** (and **does not build** against current `crownshell`) · Rust ·
+**Status: Partial** · Rust ·
 default branch `main` · [repo](https://github.com/Crown-OS/crownotify)
 
 The CrownOS notification daemon. Implements the freedesktop notification
@@ -33,15 +33,17 @@ cargo run
 dbus-run-session -- cargo test -- --test-threads=1
 ```
 
-> **It does not currently compile against `crownshell` HEAD.** `src/main.rs`
-> calls `window.request_frame(compositor_state, qh)` with two arguments; current
-> `crownshell` takes three. `crownotify` was last touched before `crownshell`'s
-> text work landed. Since it uses `path = "../crownshell"`, and `crowndictator`
-> needs the three-argument form, **the two cannot both build against the same
-> checkout.** Fixing this is a good first task.
+> **This used to not compile.** `src/main.rs` called
+> `window.request_frame(compositor_state, qh)` with two arguments while
+> `crownshell` had taken three since 0.2.0 — so it was stale against the
+> *published* release, not merely against HEAD. Because it used
+> `path = "../crownshell"` and `crowndictator` needed the three-argument form,
+> the two could not build against the same checkout at all. Fixed by binding
+> `text_cx` out of the destructured `App` in the ping-source closure.
 
-`crownshell` is a **path** dependency, so your local checkout is used — see
-[Workspace setup](../10-getting-started/workspace-setup.md).
+`crownshell` is now `"0.3"` from crates.io. To build against a local checkout,
+use the overlay in
+[Workspace setup](../10-getting-started/workspace-setup.md#developing-across-repositories).
 
 ---
 

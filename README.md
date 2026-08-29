@@ -24,10 +24,13 @@ build a piece of it and send a patch, start here.
 | See every repo and what it does | [Component map](docs/00-overview/component-map.md) |
 | Know what actually works today | [Project status](docs/00-overview/project-status.md) |
 | Set up a dev environment | [Prerequisites](docs/10-getting-started/prerequisites.md) → [Workspace setup](docs/10-getting-started/workspace-setup.md) |
+| Install native packages by hand | [Native packages, per distribution](docs/10-getting-started/native-packages.md) |
 | Build and run something | [Build and run](docs/10-getting-started/build-and-run.md) |
 | Make your first patch | [Your first change](docs/10-getting-started/your-first-change.md) |
 | Understand the design | [Architecture overview](docs/20-architecture/overview.md) |
 | Contribute code | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Set up any Linux distro | [`crownos-setup`](https://github.com/Crown-OS/crownos-setup) |
+| Publish a release | [Releasing](docs/40-contributing/releasing.md) |
 
 ---
 
@@ -70,10 +73,10 @@ Full table with status markers: [Component map](docs/00-overview/component-map.m
 ```
 docs/
   00-overview/          What CrownOS is, what exists, what works
-  10-getting-started/   Toolchain, checkout layout, building, first patch
+  10-getting-started/   Toolchain, native packages, checkout layout, building
   20-architecture/      How the pieces fit and talk to each other
   30-components/        One page per repository
-  40-contributing/      Workflow, code standards, testing, CI, doc style
+  40-contributing/      Workflow, code standards, testing, CI, releasing, doc style
   50-reference/         Config schema, env vars, keybindings, glossary
   60-users/             Installing and using CrownOS
 templates/.github/      Issue and PR templates to copy into other repos

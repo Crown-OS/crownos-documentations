@@ -1,7 +1,7 @@
 # Project status
 
 An honest account of what works today. Written so you can pick something to work
-on without discovering the hard way that it does not compile.
+on without discovering the hard way that it is an empty skeleton.
 
 Last verified against the default branch of each repository on **2026-08-21**.
 
@@ -19,92 +19,129 @@ observed, it says so.
 |---|---|---|---|---|
 | crownos-config | **Stable** | Yes | 26 unit + 1 e2e | Best-documented crate in the org |
 | crownpositor | **Early** | Yes | 183 unit | Largest codebase; ~17 open TODOs |
-| crownshell | **Early** | Yes | 42 unit | Self-described "API will move" |
+| crownshell | **Early** | Yes | 42 unit | Published on crates.io at 0.3.0 |
 | crowndictator | **Early** | Yes | 11 unit | Heavy runtime prerequisites |
 | crownuikit | **Early** | Yes | None | Wired to nothing yet |
-| crownotify | **Partial** | **No** ¹ | 7 integration | Only repo with real integration tests |
+| crownotify | **Partial** | Yes | 7 integration | Only repo with real integration tests |
 | crownbar | **Partial** | Yes | None | Reads no CrownOS config |
 | crowndock | **Partial** | Yes | None | Cannot launch applications |
 | crownos-website | **Early** | Yes | None | Copy is placeholder |
+| crownos-setup | **Stable** | n/a | container-verified | Bootstrap for 4 distro families + Nix |
 | crownos-iso | **Skeleton** | n/a | n/a | Unmodified upstream archiso |
-| crownlauncher | **Skeleton** | Yes | None | `cargo new` output |
+| crownlauncher | **Skeleton** | Yes | None | `cargo new` output; 0.0.0 placeholder |
 | crowncrate-android | **Skeleton** | Yes | 2 template stubs | Android Studio template |
-| crowncrate-linux | **Broken** | **No** | None | Compile errors |
-| lls-protocol | **Broken** | **No** | None | Compile errors |
+| crowncrate-linux | **Skeleton** | Yes | None | Compiles, but does nothing; 0.0.0 placeholder |
+| lls-protocol | **Skeleton** | Yes | None | Compiles; six source files are empty |
 | crowncrate-chrome | **Empty** | n/a | n/a | No commits |
 
-¹ `crownotify` compiles against `crownshell` 0.1.0 but not against current
-`crownshell` HEAD — see below.
+**Every Rust crate in the organization now compiles.** Four did not as of August
+2026 — `crownotify`, `crowncrate-linux`, `lls-protocol` and `crownpositor` (which
+could not even resolve its dependencies). Each is covered below. "Builds" is not
+"works": several of these are still skeletons, and the **Status** column is the
+one to read.
 
 ---
 
-## Known-broken, in detail
+## Previously broken, in detail
 
 These are the concrete blockers. Each is a good first issue.
 
-### lls-protocol does not build
+### lls-protocol: compiles now, still nearly empty
 
-It fails before compilation even starts. The root `Cargo.toml` declares both a
-`[workspace]` and a `[package]`, but there is no `src/` at the root:
+It used to fail before compilation started: the root `Cargo.toml` declared both a
+`[workspace]` and a `[package]` with no `src/` at the root, so `cargo metadata`
+died with `no targets specified in the manifest`. Behind that, `client/` and
+`server/` referenced a `[workspace.dependencies]` table that had never been
+written.
 
-```
-$ cargo metadata --no-deps
-error: failed to parse manifest at `.../lls-protocol/Cargo.toml`
-Caused by:
-  no targets specified in the manifest
-  either src/lib.rs, src/main.rs, a [lib] section, or [[bin]] section
-  must be present
-```
+The root is now a virtual workspace with a real `[workspace.dependencies]`, and
+the members are renamed `lls-client` and `lls-server` (`client` and `server` are
+both taken on crates.io).
 
-Fixing that exposes a second problem: `client/Cargo.toml` and
-`server/Cargo.toml` both use `serde = { workspace = true }`,
-`tokio = { workspace = true }` and `tokio-stream = { workspace = true }`, but the
-root has **no `[workspace.dependencies]` table** — those dependencies are
-declared under `[dependencies]` for the root package instead.
+What remains:
 
-Then `server/src/protocol.rs` calls `UdpSocket::try_from(device.ip_address)`,
-which does not exist.
+- `server/src/protocol.rs` called `UdpSocket::try_from(device.ip_address)`, which
+  did not compile — `TryFrom` is implemented for `std::net::UdpSocket`, not for
+  an `IpAddr`. `Connection::connect` now binds a socket and connects it, and is
+  async because `tokio`'s is. **The crate builds.**
+- Five module files (`config.rs`, `signaling.rs`, `streaming.rs`, `nvenc/mod.rs`,
+  `platform/mod.rs`) and `client/src/lib.rs` are zero bytes.
+- `serde` is declared without the `derive` feature. Nothing derives yet, so it is
+  not an error — it will be as soon as wire types land.
+- The repository name does not correspond to a crate. Extracting the wire types
+  from `server/` into a shared `protocol/` member is what would claim
+  `lls-protocol` on crates.io.
 
-Five module files (`config.rs`, `signaling.rs`, `streaming.rs`, `nvenc/mod.rs`,
-`platform/mod.rs`) and `client/src/lib.rs` are zero bytes.
+### crowncrate-linux: compiles now, still a skeleton
 
-### crowncrate-linux does not build
+It used to fail with two errors and carry two more defects behind them. All four
+are fixed:
 
-`cargo check` reports two errors:
+1. **`Box<dyn Action>` could not cross a thread boundary.** `server.rs::listen`
+   handed the `ActionManager` to a `thread::spawn` closure, but the trait object
+   had no `Send` bound. `Action` is now `: Send + Sync`.
+2. **`&mut self` escaped into a `'static` closure.** `ActionManager` is now
+   `Clone` — its `actions` field was already `Arc<Mutex<..>>`, so the clone shares
+   one table — and `listen` moves a handle in rather than borrowing `self`.
+3. **`notify` iterated an `Arc<Mutex<HashMap<..>>>` directly** and had an empty
+   loop body. It now locks, iterates `.values()`, and actually calls
+   `handle_message`.
+4. **`unsubscribe` was inverted.** `retain(|&i, _| i == action)` kept only the
+   entry it was asked to remove. Now `i != action`.
 
-```
-error[E0277]: `(dyn Action + 'static)` cannot be sent between threads safely
-  --> src/communication/server.rs:48:27
-error[E0277]: `Arc<Mutex<HashMap<Actions, Box<(dyn Action + 'static)>>>>`
-              is not an iterator
-  --> src/actions/action_manager.rs:33:23
-```
+The **glib conflict is gone too.** `Cargo.toml` declared `glib = "0.17"` while
+`gtk4 = "0.7"` requires 0.18, and the lockfile carried both. Nothing in `src/`
+referenced `glib` at all, so the direct dependency was simply removed; the
+lockfile now has one `glib`.
 
-1. **`server.rs::listen`** hands the `ActionManager` to a `thread::spawn`
-   closure, but `Box<dyn Action>` carries no `Send` bound, so it cannot cross a
-   thread boundary. The `Action` trait needs `: Send + Sync`.
-2. **`action_manager.rs::notify`** writes `for action in self.actions`, iterating
-   an `Arc<Mutex<HashMap<..>>>` directly. It needs a `.lock()` first — and the
-   loop body is empty regardless.
+What is still true: this crate is **333 lines and does essentially nothing**.
+`src/lib.rs` is empty, `src/ui/mod.rs` is empty, and `src/predule.rs` is not
+reachable from `main.rs`. It is published as a **0.0.0 placeholder** to hold the
+name, not as a usable crate.
 
-A third defect is a logic bug rather than a compile error:
-**`action_manager.rs::unsubscribe`** uses `actions.retain(|&i, _| i == action)`,
-which keeps only the entry it was asked to remove.
+Two things deliberately left alone:
 
-There is also a latent dependency conflict: `Cargo.toml` declares
-`glib = "0.17"` while `gtk4 = "0.7"` requires glib 0.18, and the lockfile
-contains both. It does not currently surface as an error because no code uses
-gtk4 — `src/ui/mod.rs` is empty — but it will as soon as a UI is written.
+- **`serde_cbor 0.11.2` is unmaintained** (RUSTSEC-2021-0127). Swapping to
+  `ciborium` changes the streaming-deserializer API that `server.rs` relies on,
+  and the wire format is shared with the Android client, so it needs testing
+  against both ends rather than a blind substitution.
+- **The unauthenticated TCP listener on :5253/:5252** — see
+  [SECURITY.md](../../SECURITY.md).
 
-### crownotify does not build against current crownshell
+### crownpositor: fixed, and it revealed a missing config field
 
-`crownotify/src/main.rs` calls `window.request_frame(compositor_state, qh)` with
-two arguments. Current `crownshell` HEAD takes three —
-`request_frame(&mut self, compositor_state, qh, text_cx)`. `crownotify` was last
-touched before `crownshell`'s text work landed.
+`crownpositor` had never built in a normal checkout. Its committed `[patch]`
+pointed at `../crownos-config`, a path that usually does not exist, so
+`cargo metadata` failed before compilation and hid everything behind it.
 
-`crowndictator` uses the three-argument form, so **`crownotify` and
-`crowndictator` cannot both build against the same `crownshell` revision** today.
+With the patch gone and `crownos-config = "0.2"` resolving properly, two real
+problems surfaced:
+
+1. **`crownos-config` had no `startup` field.** `state/actions.rs:171` reads
+   `self.config.current.compositor.startup`, and `config/src/startup.rs` exists
+   purely to parse those command lines — but the field was never added to the
+   `Compositor` section. `crownpositor`'s own HEAD commit is *"…and added startup
+   apps"*; the `crownos-config` half was never landed. Added now as
+   `startup: Vec<String>`, which is what `startup::commands(&[String])` expects.
+2. **`main.rs` called `compositor::run()`**, and the library is now named
+   `crownpositor` after the crates.io rename. One line.
+
+Both fixed; `cargo check --all-targets` is clean.
+
+### crownotify: fixed
+
+`crownotify/src/main.rs` called `window.request_frame(compositor_state, qh)` with
+two arguments while `crownshell` had taken three since **0.2.0** —
+`request_frame(&mut self, compositor_state, qh, text_cx)`. It was stale against
+the published release, not merely against HEAD.
+
+Fixed by binding `text_cx` out of the destructured `App` in the ping-source
+closure. `crownotify` now compiles against `crownshell` 0.3.0, as do `crownbar`
+and `crowndock` — the eight commits of `crownshell` drift turned out to be
+additive, so neither needed a source change.
+
+The notification centre is still a no-op and `notifications.ron` is still
+ignored, so the component stays **Partial**.
 
 ---
 
@@ -193,34 +230,45 @@ Two things to know:
 
 CD is deliberately minimal: pushing a `v*` tag to `crownbar`, `crowndock`,
 `crownotify`, `crowndictator` or `crownpositor` builds a release binary and
-attaches a tarball to a draft GitHub Release. Nothing is published to crates.io,
-the AUR, or as an ISO.
+attaches a tarball to a draft GitHub Release. A `v*` tag also publishes the
+crate to crates.io via `publish.yml`. Nothing is published to the AUR or as an
+ISO.
 
 Still absent: **CODEOWNERS**, **dependabot**, **branch protection**, and
 installed issue/PR templates — those are staged in
 [`templates/.github/`](../../templates/.github) but not yet copied into the
 repos.
 
-### No toolchain pin
+### Toolchain pin (resolved)
 
-There is no `rust-toolchain.toml` in any repo. Only `crownshell` declares an MSRV
-(`rust-version = "1.85"`). Every crate is edition 2024, which requires 1.85
-regardless.
+Every Rust repo now ships a `rust-toolchain.toml` pinning **1.88.0**, and every
+crate declares `rust-version = "1.88"`.
+
+1.88 rather than 1.85 is the correction that mattered: edition 2024 needs only
+1.85, and 1.85 is what `crownshell` published in its 0.2.0 metadata — but
+`vello 0.9` and `xilem 0.4` both declare `rust-version = "1.88"`, and `wgpu 29`
+and `zbus 5.16` declare 1.87. The dependency graph sets the floor, not the
+edition. The declared MSRV was wrong by three minor versions.
 
 ### Licensing
 
-**13 of 15 non-empty repositories have no LICENSE file.** Legally that makes them
-all-rights-reserved despite being presented as open source.
+**Mostly resolved.** 13 of 15 non-empty repositories had no LICENSE file, which
+legally made them all-rights-reserved despite being presented as open source. All
+now carry MIT, and every crate declares `license = "MIT"` in its manifest —
+crates.io will not accept a crate without it.
 
 | Repo | LICENSE | Copyright |
 |---|---|---|
 | `crownshell` | MIT | `marvelxcodes` |
 | `crownos-documentations` | MIT | `Crown-OS` |
-| everything else | **none** | — |
+| the 12 added now | MIT | `The CrownOS Authors` |
+| `crownos-iso` | **none** — see below | — |
 
-Two further inconsistencies: `crowndictator` declares `license = "MIT"` in its
-`Cargo.toml` but ships no LICENSE file, and the two existing files disagree on
-whether the copyright holder is an individual or the organization.
+**The copyright line is unsettled and needs a decision.** The new files say
+`The CrownOS Authors` rather than extending one individual's copyright claim
+across the whole organization, but that disagrees with `crownshell`'s existing
+file. Three maintainers are listed in CONTRIBUTING. Settle it before publishing
+widely — it is baked into every released crate permanently.
 
 `crownos-iso` is a verbatim copy of Arch Linux's archiso `releng` profile, whose
 scripts carry `SPDX-License-Identifier: GPL-3.0-or-later`. Redistributing it
@@ -228,8 +276,13 @@ under an MIT umbrella is a licensing problem that needs resolving.
 
 ### Versioning
 
-One tag exists in the entire organization: `crownshell v0.2.0`. No `CHANGELOG.md`
-anywhere. No release automation. Nothing published to crates.io, docs.rs, the AUR,
+`crownshell` is published on crates.io — 0.1.0 on 2026-07-15 and 0.2.0 on
+2026-08-04, with docs.rs builds — and carries the organization's only git tag,
+`v0.2.0`. Everything else is being published now; see
+[Releasing](../40-contributing/releasing.md) for the order and the state of each
+crate.
+
+There is still no `CHANGELOG.md` anywhere, and nothing is published to the AUR
 or as an ISO artifact.
 
 ### Branch names (resolved)
