@@ -4,15 +4,30 @@ Per-component commands. Assumes you have installed the
 [prerequisites](prerequisites.md) — `crownos-setup`'s `bootstrap.sh --dev` does
 that and the checkout in one step.
 
-Every component now builds from a plain clone, anywhere on disk, because crates
-depend on published crates.io versions rather than on relative paths. You only
-need a particular layout if you are changing `crownshell` or `crownos-config` and
-want a component to pick that change up — see
-[Workspace setup](workspace-setup.md#developing-across-repositories).
+> **A plain clone does not build.** `crownbar`, `crowndock`, `crownotify`,
+> `crowndictator` and `crownpositor` declare `crownshell = "0.3"` and
+> `crownos-config = "0.2"`, and neither version exists on crates.io — only
+> `crownshell` 0.1.0 and 0.2.0 were ever published. Without the
+> `[patch.crates-io]` overlay described in
+> [Workspace setup](workspace-setup.md#the-overlay-mandatory), those five repos
+> fail at `cargo metadata` before a single line is compiled. Run
+> `crownos-setup`'s `./bootstrap.sh --dev` first; everything below assumes you
+> have.
 
-Every Rust crate in the organization compiles as of this writing. Several are
-still **Skeleton** — they build and do almost nothing — and
-[Project status](../00-overview/project-status.md) says which.
+With the overlay in place and the pinned 1.88.0 toolchain, **all eleven Rust
+crates** pass `cargo check --all-targets`, and all eleven pass
+`cargo fmt --all --check`.
+
+That is true of a **local working tree**, not of the default branch you would
+get from GitHub today. Several of the fixes involved are still uncommitted.
+
+Several components are still **Skeleton** — they build and do almost nothing —
+and [Project status](../00-overview/project-status.md) says which.
+
+`bootstrap.sh --dev` clones the eleven Rust repositories plus
+`crownos-documentations` and `crownos-setup`. It does **not** clone
+`crownos-iso`, `crownos-website`, `crowncrate-android` or `crowncrate-chrome`;
+clone those by hand.
 
 ---
 
@@ -53,7 +68,7 @@ cargo run --example raw_wgpu     # one wallpaper surface per output
 explains the popup pattern properly. Read it before writing a new surface.
 
 If an example fails at surface creation, you do not have a working Vulkan or GL
-adapter. See [Prerequisites](prerequisites.md#everything-any-crownshell-based-app).
+adapter. See [Prerequisites](prerequisites.md#every-crownshell-based-app).
 
 ---
 
@@ -71,14 +86,17 @@ cd crownpositor
 CROWN_BACKEND=winit cargo run
 ```
 
-That opens a window containing a complete CrownOS session. It logs
-`crownpositor is running` and prints the Wayland socket name it created.
+That opens a window containing a complete CrownOS session, and creates its own
+Wayland socket. **[Try it without installing](../60-users/try-it-without-installing.md)
+is the full walkthrough** — finding the socket name, attaching clients to it,
+and what to expect.
 
-To attach a client to it, use that socket rather than your host compositor's:
+`crownpositor` logs through `tracing-subscriber`'s `fmt` layer, so its output
+goes to **stderr** and `RUST_LOG` takes tracing's env-filter syntax, not
+`env_logger`'s:
 
 ```bash
-# In the nested session's log, find the socket name (e.g. wayland-2)
-WAYLAND_DISPLAY=wayland-2 foot
+RUST_LOG=crownpositor=debug,smithay=warn CROWN_BACKEND=winit cargo run
 ```
 
 `Super+Return` inside the nested window spawns `foot`, if you have it installed.
@@ -230,15 +248,24 @@ with "task not found". Do not run it.
 
 ## crownos-iso
 
-Requires `archiso` and root on an Arch system. There is no build script in the
-repo — you invoke `mkarchiso` against the profile directory:
+The repo now carries a `build.sh` that works off Arch too — it runs `mkarchiso`
+natively on Arch, and otherwise drives a privileged Arch container:
+
+```bash
+cd crownos-iso
+./build.sh
+```
+
+**That script is a local, untracked addition.** On the default branch there is
+no build script, and you invoke `mkarchiso` against the profile directory
+yourself, which needs `archiso` and root on an Arch system:
 
 ```bash
 sudo mkarchiso -v -w /tmp/crownos-work -o /tmp/crownos-out ./crownos-iso
 ```
 
-The profile is currently an unmodified copy of upstream Arch's `releng`, so what
-comes out is a generic Arch rescue image named `archlinux`, with no CrownOS
+Either way the profile is an unmodified copy of upstream Arch's `releng`, so
+what comes out is a generic Arch rescue image named `archlinux`, with no CrownOS
 packages and no CrownOS branding. See
 [crownos-iso](../30-components/crownos-iso.md).
 
@@ -247,10 +274,11 @@ packages and no CrownOS branding. See
 ## Running the whole desktop
 
 There is no single command that starts a full CrownOS session, and no session
-file to select from a display manager. The compositor spawns startup programs
-itself from `compositor.startup` in its config, but the `Compositor` schema in
-`crownos-config` does not currently define a `startup` field — so the two
-checkouts do not agree, and that path does not work today.
+file to select from a display manager. The compositor does spawn startup
+programs itself from `compositor.startup`, and the `Compositor` schema in
+`crownos-config` defines the matching `startup: Vec<String>` field — that half
+is landed. What is missing is anything that starts the compositor in the first
+place.
 
 To approximate a session by hand:
 

@@ -1,6 +1,6 @@
 # crownshell
 
-**Status: Early** · Rust · default branch `main` · version **0.2.0** ·
+**Status: Early** · Rust · default branch `main` · published version **0.2.0** ·
 [repo](https://github.com/Crown-OS/crownshell)
 
 A framework for building Wayland **layer shell** surfaces — bars, docks,
@@ -36,7 +36,7 @@ This is the foundation for `crownbar`, `crowndock`, `crownotify` and
 ## Prerequisites
 
 The base set in
-[Prerequisites](../10-getting-started/prerequisites.md#everything-any-crownshell-based-app).
+[Prerequisites](../10-getting-started/prerequisites.md#every-crownshell-based-app).
 You need a working Vulkan or GL adapter — wgpu requires a real device.
 
 To run it you need any compositor supporting `wlr-layer-shell`: `crownpositor`,
@@ -66,7 +66,7 @@ before writing a new surface.
 ## The API
 
 ```rust
-use crownshell::predule::*;
+use crownshell::prelude::*;
 use vello::kurbo::RoundedRect;
 use vello::peniko::{Color, Fill};
 
@@ -104,9 +104,13 @@ fn main() -> Result<()> {
 }
 ```
 
-> **The prelude module is spelled `predule`.** A typo in the public API, present
-> since extraction, used by all four downstream crates. Fixing it is a breaking
-> change; it stands for now.
+> **The prelude used to be spelled `predule`.** That typo shipped in 0.1.0 and
+> 0.2.0 and is what all four downstream crates import. 0.3.0 introduces the
+> correctly spelled `prelude` module and keeps `predule` as a `#[deprecated]`
+> re-export of it, so existing code still compiles with a warning; the alias is
+> scheduled for removal in 0.4.0. **That correction is a local, uncommitted
+> change** — on the default branch `src/lib.rs` still says `pub mod predule;`
+> and no `prelude` exists.
 
 | Type | Role |
 |---|---|
@@ -143,7 +147,7 @@ Detail, including the popup pattern:
 | `blur.rs` | 479 | Separable Gaussian post-process, two full-screen passes |
 | `text.rs` | 1151 | `Text`, `TextStyle`, `TextContext` |
 | `animations.rs` | 243 | `Spring`, `SpringProfile`, `Clock` |
-| `predule.rs` | 14 | The (mis-spelled) prelude |
+| `prelude.rs` | 14 | The prelude. Was `predule.rs`; `lib.rs` keeps a deprecated `predule` alias for 0.1/0.2 consumers. |
 | `wayland/` | — | Per-protocol dispatch, including `background_effect` |
 
 ---
@@ -153,8 +157,18 @@ Detail, including the popup pattern:
 `crownshell` is purely a Wayland client library. It does **not** depend on
 `crownos-config` — components read their own settings.
 
-Consumed by `crownbar`, `crowndock`, `crownotify` and `crowndictator` as
-`crownshell = "0.3"` from crates.io. No path or git dependencies remain.
+Consumed by `crownbar`, `crowndock`, `crownotify` and `crowndictator`, all four
+declaring `crownshell = "0.3"`. No path or git dependencies remain.
+
+> **`crownshell` 0.3 has not been published.** crates.io carries 0.1.0 and 0.2.0
+> and nothing else, and the organization's only git tag is `crownshell v0.2.0`.
+> A working tree bumps the manifest to `version = "0.3.0"` and adds the `prelude`
+> rename that release is meant to carry, but that is uncommitted and unreleased;
+> the default branch still declares 0.2.0.
+> Every dependent therefore fails to resolve from a plain clone; the requirement
+> is satisfied by the `[patch.crates-io]` overlay described in
+> [Workspace setup](../10-getting-started/workspace-setup.md#the-overlay-mandatory).
+> `crownshell` itself has no CrownOS dependencies and builds from a plain clone.
 
 ---
 
@@ -175,15 +189,20 @@ you're going to use it, expect breaking changes."*
 - **`bluer`, `battery` and `tracing` are declared and never used.** Leftovers
   from when `crownbar`'s code lived here. `bluer` alone pulls in a large D-Bus
   and BlueZ tree that you must still have installed to link.
-- **`predule` is a typo that is now permanent public API.** The prelude module
-  is spelled `predule`, and 0.1.0 and 0.2.0 shipped it. 0.3.0 adds a correctly
-  spelled `prelude` and keeps `predule` as a deprecated re-export.
+- **`predule` was a typo in the public API.** Both published releases — 0.1.0
+  and 0.2.0 — shipped the prelude under that spelling, and every downstream
+  crate imports it. It is no longer permanent: 0.3.0 adds `prelude` and demotes
+  `predule` to a `#[deprecated]` re-export, with removal scheduled for 0.4.0.
+  Downstream crates still import `predule` and will warn until they are updated.
+  All of that is uncommitted work — the default branch has only `predule`.
 
 ---
 
 ## License
 
-MIT — the only shell component with a LICENSE file. Copyright is attributed to
-`marvelxcodes` rather than to Crown-OS, which is inconsistent with the other
-licensed repo. See
+MIT — the only shell component with a LICENSE file, and one of only three
+repositories in the organization that carry one on their default branch
+(`crownos-setup` and `crownos-documentations` are the others). Copyright is
+attributed to `marvelxcodes`; the other two say "The CrownOS Authors" and
+"Crown-OS". All three disagree. See
 [Project status](../00-overview/project-status.md#licensing).

@@ -79,12 +79,20 @@ So an optional field is written the same way a required one is —
 ```rust
 use crownos_config::{load, save, schema::Appearance};
 
-let mut appearance: Appearance = load();
+let mut appearance: Appearance = load(Appearance::SECTION);
 appearance.dark_mode = false;
-save(&appearance);
+save(Appearance::SECTION, &appearance)?;
 ```
 
-Three behaviours to know:
+The section is named at the call site rather than inferred from `T`, so a type
+can be loaded from a scratch section in a test. Pass the generated
+`Appearance::SECTION` constant rather than the string `"appearance"` — a typo in
+a literal is a file that silently never gets read.
+
+`load` returns `T`, not a `Result`: there is no error to handle, because every
+failure path ends in the default. `save` returns `io::Result<()>`.
+
+Four behaviours to know:
 
 **A missing file materialises defaults.** `load()` on a file that does not exist
 writes `T::default()` to disk and returns it. A fresh install therefore ends up
@@ -110,7 +118,7 @@ their defaults.
 use crownos_config::{subscribe_typed, schema::Input};
 
 // Keep the returned Subscription alive — dropping it unregisters.
-let _sub = subscribe_typed::<Input, _>(|input| {
+let _sub = subscribe_typed::<Input, _>(Input::SECTION, |input| {
     // Called on every external change to input.ron.
 });
 ```
@@ -119,9 +127,13 @@ Three subscription APIs:
 
 | Function | Delivers |
 |---|---|
-| `subscribe(section, cb)` | Raw file contents for one section |
-| `subscribe_typed::<T, _>(cb)` | A parsed `T` for `T`'s section |
-| `subscribe_key(key, cb)` | Only when one specific field changes |
+| `subscribe(section: &str, cb)` | Raw `Vec<u8>` file contents for one section |
+| `subscribe_typed::<T, _>(section: &str, cb)` | A parsed `T`, for the named section |
+| `subscribe_key(key, cb)` | Only when one specific field changes — no section argument, the key type carries it |
+
+All three return a `Subscription`; dropping it unregisters. A payload that does
+not parse as `T` is dropped by `subscribe_typed` rather than delivered as a
+default, so a half-written or broken file never looks like a real change.
 
 There is **one** process-wide `notify` watcher, created lazily on the first
 subscribe, non-recursive on the config directory. Create, modify and rename

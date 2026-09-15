@@ -22,15 +22,22 @@ src/main.rs    fn main() { println!("Hello, world!"); }
 
 ```toml
 [package]
-name = "launcher"      # not "crownlauncher"
-version = "0.1.0"
+name = "crownlauncher"
+version = "0.0.0"
 edition = "2024"
 
 [dependencies]
 ```
 
-Note the **package is named `launcher`**, not `crownlauncher`. There is no
-`Cargo.lock`, no README, no dependencies.
+The version is `0.0.0` — a placeholder, and one that has never been published.
+Nothing in the Crown-OS organization is on crates.io except `crownshell` (0.1.0
+and 0.2.0). There is no `Cargo.lock` and no dependencies.
+
+> **That manifest is a local, uncommitted change.** On the default branch the
+> package is still named **`launcher`**, not `crownlauncher`, and declares
+> `version = "0.1.0"`. The same applies to the README and the LICENSE: both files
+> exist in the working tree and neither is tracked, so a visitor cloning the repo
+> still gets neither.
 
 ---
 
@@ -90,5 +97,7 @@ write the surface.
 
 ## License
 
-**No LICENSE file.** See
+**No LICENSE file on the default branch.** One exists untracked in the working
+tree; only `crownos-setup`, `crownos-documentations` and `crownshell` have a
+committed LICENSE. See
 [Project status](../00-overview/project-status.md#licensing).

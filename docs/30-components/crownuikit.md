@@ -23,7 +23,9 @@ Most plausibly the CrownOS settings panel. Two pieces of evidence point that way
   settings panel", and several name their specific page ("the settings panel's
   Input page").
 
-*(This is inference. There is no README or crate-level doc comment stating it.)*
+*(This is inference. A README now exists in the working tree, but it is an
+**untracked local addition** — nothing on the default branch, and no crate-level
+doc comment, states what the crate is for.)*
 
 ---
 
@@ -38,8 +40,14 @@ Opens a desktop window with the widget gallery — sidebar, sliders, toggles, an
 `select`.
 
 Three dependencies only: `xilem 0.4.0`, `winit 0.30.13`, `blinc_icons 0.5.1`
-(Lucide icon bodies). **No CrownOS dependencies at all** — it is currently an
-island.
+(Lucide icon bodies). **No CrownOS dependencies at all**, and nothing in the
+organization depends on `crownuikit` either — it is an orphan in both directions,
+the only Rust repo with no edge to any other. It is also unpublished, like every
+crate here except `crownshell`.
+
+Because it has no CrownOS dependencies, it is one of the few Rust repos that
+resolves from a plain clone without the `[patch.crates-io]` overlay. It passes
+`cargo check --all-targets` on the pinned 1.88.0 toolchain.
 
 ---
 
@@ -76,9 +84,11 @@ most deliberate architectural writing in the repo.
 material lifted from a design mock — "Untitled UI", "Bank accounts", "Local
 currency", "Upgrade to PRO". It is not CrownOS settings navigation.
 
-**It is wired to nothing.** No `crownos-config` dependency, so it reads no
-settings and writes none. Connecting it is the obvious next step, and
-`crownos-config`'s `xilem_view` module exists to make that straightforward.
+**It is wired to nothing, in either direction.** No `crownos-config` dependency,
+so it reads no settings and writes none — and no repository in the organization
+depends on it, so nothing consumes the widgets. Connecting it is the obvious next
+step, and `crownos-config`'s `xilem_view` module exists to make that
+straightforward.
 
 **Dead and empty files:**
 
@@ -92,7 +102,7 @@ run` builds the gallery binary and `cargo build` builds both.
 
 **No tests, no examples, no benches.**
 
-**A fourth spring implementation.** `crownpositor`, `crownshell`, `crownbar`,
+**A fifth spring implementation.** `crownpositor`, `crownshell`, `crownbar`,
 `crowndock` and this crate each have their own.
 
 ---

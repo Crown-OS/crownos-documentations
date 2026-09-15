@@ -35,10 +35,20 @@ restarts.
 > `log::warn!` output is invisible by default. Add the init if you need to debug
 > it.
 
-`crownshell` is a crates.io dependency (`"0.3"`). It used to be a git dependency with no rev or tag, whose lockfile entry had **no
-`source` line**, meaning the lock was generated against a local path checkout
-rather than the git URL — manifest and lock have diverged. See
-[Dependency graph](../20-architecture/dependency-graph.md#version-skew).
+The manifest declares `crownshell = "0.3"`. It used to be a git dependency with
+no rev or tag, whose lockfile entry had **no `source` line** — the lock was
+generated against a local path checkout rather than the git URL.
+
+> **That version is not on crates.io** (0.1.0 and 0.2.0 are the only published
+> releases), and the committed `Cargo.lock` still records `crownshell` with no
+> `source` line plus `[[patch.unused]]` stanzas, so `cargo build --locked` from a
+> fresh clone fails too. Both are resolved by the `[patch.crates-io]` overlay
+> above your checkouts —
+> [Workspace setup](../10-getting-started/workspace-setup.md#the-overlay-mandatory).
+> With it, `crowndock` passes `cargo check --all-targets` on the pinned 1.88.0
+> toolchain.
+
+See [Dependency graph](../20-architecture/dependency-graph.md#version-skew-resolved).
 
 ---
 

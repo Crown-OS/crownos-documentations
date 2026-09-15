@@ -1,0 +1,5 @@
+# Nothing here is built, so this is only about editor and tooling droppings.
+.direnv/
+/result
+/result-*
+.DS_Store

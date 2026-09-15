@@ -8,8 +8,12 @@ users rather than contributors — the developer-facing version is
 
 ## The big ones
 
-**There is no installable CrownOS.** No ISO, no packages, no releases. Everything
-is built from source. See [Install](install.md).
+**There is no installable CrownOS.** No ISO, no packages, no releases, and
+nothing you can `cargo install` — `crownshell` 0.1.0 and 0.2.0 are the only
+CrownOS crates ever published, and they are a library. Everything is built from
+source, and most repositories need a `[patch.crates-io]` overlay before they
+will even resolve. See [Install](install.md) and
+[Try it without installing](try-it-without-installing.md).
 
 **There is no complete desktop.** You can run a compositor, a bar, a dock and a
 dictation daemon, but there is no settings panel, no launcher, no greeter, no

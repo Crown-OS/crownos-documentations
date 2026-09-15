@@ -32,6 +32,24 @@ settings. It is also what the test suite uses.
 
 ---
 
+## CROWNOS_SRC
+
+**Read by:** `crownos-setup`'s `bootstrap.sh`.
+
+Where `--dev` clones the CrownOS repositories. Defaults to `$HOME/src/crownos`.
+
+```bash
+CROWNOS_SRC=/work/crownos ./bootstrap.sh --dev
+```
+
+The same prefix can be given on the command line with `--prefix=DIR`, which is
+parsed after the environment and therefore wins.
+
+Only `bootstrap.sh` reads it. No runtime component looks at it, and it has
+nothing to do with `CROWN_CONFIG_DIR`.
+
+---
+
 ## CROWN_BACKEND
 
 **Read by:** `crownpositor`.
@@ -84,14 +102,17 @@ CROWN_RENDER_API=vulkan cargo run
 
 **Read by:** `crownpositor`.
 
-The XCursor theme name to load. Falls back to a built-in cursor if the theme
+The XCursor theme name to load. **Defaults to `"default"`** when unset —
+`xcursor` walks the `Inherits` chain from there, which reaches whatever the
+distribution symlinked into place. Falls back to a built-in cursor if the theme
 cannot be found.
 
 ## XCURSOR_SIZE
 
 **Read by:** `crownpositor`.
 
-Cursor size in pixels.
+Cursor size in pixels. **Defaults to `24`.** A value that is not a positive
+integer is ignored and the default is used instead.
 
 Both follow the standard freedesktop conventions, so setting them in your shell
 profile affects CrownOS the same way it affects other desktops.
@@ -177,10 +198,11 @@ outside the CrownOS config convention, in its own directory and in TOML. See
 | Variable | Component | Purpose |
 |---|---|---|
 | `CROWN_CONFIG_DIR` | crownos-config (all consumers) | Override the config directory |
+| `CROWNOS_SRC` | crownos-setup (`bootstrap.sh`) | `--dev` clone prefix, default `$HOME/src/crownos` |
 | `CROWN_BACKEND` | crownpositor | `winit` / `kms` |
 | `CROWN_RENDER_API` | crownpositor | `egl` / `vulkan` |
-| `XCURSOR_THEME` | crownpositor | Cursor theme |
-| `XCURSOR_SIZE` | crownpositor | Cursor size |
+| `XCURSOR_THEME` | crownpositor | Cursor theme, default `"default"` |
+| `XCURSOR_SIZE` | crownpositor | Cursor size, default `24` |
 | `WAYLAND_DISPLAY` | set by crownpositor | The Wayland socket |
 | `DISPLAY` | crownpositor (hint only) | Nested-session detection |
 | `RUST_LOG` | crownbar, crownotify, crowndictator | Log filter |

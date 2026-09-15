@@ -96,8 +96,16 @@ without a restart.
 (keys: "Super+Q", action: "close-window")
 ```
 
-Both fields are strings so the file stays hand-editable; a bad row is logged and
-skipped rather than failing the load.
+Both fields are strings so the file stays hand-editable; a row whose chord or
+action string the compositor cannot make sense of is logged and skipped rather
+than failing the load.
+
+**Both fields are mandatory.** `Binding` does not derive `#[serde(default)]` —
+unlike the section structs, which do. A row that omits `keys` or omits `action`
+fails the parse of the *whole file*, and a file that fails to parse means
+`load()` hands back `Compositor::default()`. One incomplete row therefore
+silently discards every other setting in `compositor.ron`, with no error
+message.
 
 **An empty `keybinds` list means "use the built-in defaults", not "nothing
 bound"** — otherwise a fresh install would have no way to quit. To genuinely bind
@@ -321,8 +329,32 @@ Structure: `Mods { meta, ctrl, alt, shift }` plus `Option<KeyCode>`.
 Order does not matter: `"Ctrl+Super"` parses to the same value as
 `"Super+Ctrl"`.
 
-**Key names** are W3C `KeyboardEvent.code` values — `KeyA`, `Space`,
-`ArrowLeft`, `Digit1`, `F5`.
+**Key names** are the *written labels*, not W3C `KeyboardEvent.code` values.
+Parsing goes through `KeyCode::from_label`, so `KeyA`, `ArrowLeft` and `Digit1`
+**do not parse**. (`KeyCode::from_code` accepts those, but nothing on the config
+path calls it — it is the door a UI toolkit comes in through.)
+
+The accepted spellings are exactly:
+
+| Group | Names |
+|---|---|
+| Letters | `A` … `Z` |
+| Digits | `0` … `9` |
+| Function | `F1` … `F12` |
+| Editing | `Space` · `Enter` · `Tab` · `Escape` · `Backspace` · `Delete` · `Insert` |
+| Navigation | `Home` · `End` · `PageUp` · `PageDown` · `Up` · `Down` · `Left` · `Right` |
+| Lock | `CapsLock` |
+| Punctuation | `Minus` · `Equal` · `LeftBracket` · `RightBracket` · `Backslash` · `Semicolon` · `Quote` · `Backquote` · `Comma` · `Period` · `Slash` |
+
+Matching is **case-insensitive**, and spaces around the `+` are tolerated, so
+`ctrl + alt + d` is the same chord as `Ctrl+Alt+D`.
+
+> **A chord that fails to parse produces no error message.** `Keybind`'s
+> `Deserialize` rejects the value, which fails the parse of the whole file, and
+> a file that fails to parse makes `load()` return the section default. So one
+> typo — `"Super+ArrowLeft"`, `"Super+KeyA"` — **silently reverts the entire
+> section to defaults**, not just that one field. Nothing is logged. Check
+> spellings against the table above.
 
 **Modifier-only chords are valid** and are fired on the release edge. That is why
 `Super+Ctrl` works as a launcher toggle and `Super+Space` works as push-to-talk.
@@ -333,7 +365,9 @@ Order does not matter: `"Ctrl+Super"` parses to the same value as
 
 ## Adding a section
 
-1. Add `src/schema/<name>.rs` using the `section!` macro.
+1. Add `src/schema/<name>.rs` using the `section!` macro. The macro itself is
+   defined in `src/key.rs`, next to the `Key` trait it generates impls for —
+   not in `src/schema/`.
 2. Declare it in `src/schema/mod.rs`.
 3. Write a module doc that names **who the consumer is** — every existing section
    does, and it is the only place that contract is recorded.

@@ -57,17 +57,22 @@ deliberate decision.
 
 ### Checking your changes
 
-CI runs a relative-link check and a status-marker consistency check on every
-push. Both are in `Crown-OS/.github`'s `docs.yml`. To run the link check
-yourself before pushing:
+**There is no CI to catch anything.** No workflow has ever run in any Crown-OS
+repository, and the `Crown-OS/.github` repo that a shared `docs.yml` would live
+in does not exist on GitHub. The relative-link check and the status-marker
+consistency check are things you run by hand:
 
 ```bash
 grep -ro '](\.\{1,2\}/[^)]*' docs/ README.md CONTRIBUTING.md
 ```
 
-CI also prints every mention of CI, CODEOWNERS, sign-off and DCO to the job
-summary for review. Each one must describe what is actually configured — an
+Also grep your own diff for mentions of CI, CODEOWNERS, sign-off and DCO. Each
+one must describe what is actually configured — and today that is nothing, so an
 unqualified "CI will reject…" is a bug.
+
+The same applies to "fixed". Most of the build fixes these pages describe exist
+only as uncommitted changes in someone's working tree. If a page says a defect is
+fixed, it must say whether that is true on the default branch or only locally.
 
 If you document a command, run it first.
 
@@ -90,8 +95,9 @@ That branch is superseded by `CONTRIBUTING.md` on `main`.
 Being consistent about honesty, these pages have gaps too:
 
 - **No API reference here.** `crownshell` has rustdoc on
-  [docs.rs](https://docs.rs/crownshell), and every crate published from now on
-  gets the same automatically. These pages do not duplicate it — the
+  [docs.rs](https://docs.rs/crownshell), and it is the only crate in the
+  organization that does, because it is the only one published. These pages do
+  not duplicate it — the
   [Reference](../50-reference) section covers configuration, environment
   variables and keybindings, not crate APIs.
 - **No screenshots.** No page shows what CrownOS looks like.
@@ -104,4 +110,6 @@ Being consistent about honesty, these pages have gaps too:
 
 ## License
 
-MIT. One of only two repositories in the organization with a LICENSE file.
+MIT, copyright "Crown-OS". One of only three repositories in the organization
+carrying a LICENSE file on its default branch — `crownos-setup` and `crownshell`
+are the others, and all three name a different copyright holder.

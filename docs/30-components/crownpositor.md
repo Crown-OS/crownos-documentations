@@ -22,9 +22,13 @@ Cargo workspace with two members:
 | `compositor` | bin + lib | Everything. `main.rs` is three lines calling `compositor::run()`. |
 | `config` | lib | The compositor's *compiled* configuration — regexes, chords, geometry in signed pixels |
 
-Note the second crate is named `config`, not `crownpositor-config`. It coexists
-in the dependency tree with `crownos-config`, which is the shared on-disk schema.
-They are different things.
+The second crate is now packaged as `crownpositor-config` and imported under the
+alias `config`. It coexists in the dependency tree with `crownos-config`, which
+is the shared on-disk schema. They are different things.
+
+> **That rename is a local, uncommitted change.** On the default branch the
+> package is still plainly named `config` and depended on as
+> `config = { path = "../config" }`, which is not a name that can be published.
 
 ### Modules
 
@@ -59,7 +63,7 @@ indices are the only route from a surface to anything else.
 
 ## Prerequisites
 
-Everything in [Prerequisites](../10-getting-started/prerequisites.md#everything-any-crownshell-based-app),
+Everything in [Prerequisites](../10-getting-started/prerequisites.md#every-crownshell-based-app),
 plus `libdrm`, `libinput`, `libseat`, `libudev`, `pixman` and `xorg-xwayland`.
 
 Smithay 0.7 is pulled with an explicit feature list: `backend_drm`,
@@ -74,12 +78,24 @@ Smithay 0.7 is pulled with an explicit feature list: `backend_drm`,
 > needed; EDID make/model naming returns when the sys crate catches up. Do not
 > "fix" this by re-enabling the feature.
 
-`crownos-config` comes from crates.io (`version = "0.2"`,
+`crownos-config` is declared as a registry dependency (`version = "0.2"`,
 `default-features = false`, so the xilem/vello stack stays out). The manifest
 used to commit a `[patch]` pointing at `../crownos-config`, which made a sibling
 checkout mandatory for everyone who cloned the repo — and hard-failed when the
-path was absent. To build against a local `crownos-config`, use the overlay in
-[Workspace setup](../10-getting-started/workspace-setup.md#developing-across-repositories).
+path was absent.
+
+> **`crownos-config` has never been published.** No version of it exists on
+> crates.io, so `version = "0.2"` cannot resolve and a plain clone fails at
+> `cargo metadata`. Replacing the committed `[patch]` moved the requirement out
+> of the manifest, it did not remove it: you still need the `[patch.crates-io]`
+> overlay above your checkouts —
+> [Workspace setup](../10-getting-started/workspace-setup.md#the-overlay-mandatory).
+> With the overlay and the pinned 1.88.0 toolchain, `crownpositor` passes
+> `cargo check --all-targets`.
+
+The workspace's second member, `config`, is published to nothing either; it is
+depended on as `config = { package = "crownpositor-config", path = "../config",
+version = "0.1.0" }`, so the path entry is what actually satisfies it.
 
 ---
 
@@ -160,10 +176,12 @@ CrownOS surface that requests blur degrades silently.
 `OpenWorkspaceView` and `CloseWorkspaceView` log `"action is not implemented
 yet"` — and the four-finger trackpad gestures are bound to them.
 
-**Schema skew with crownos-config.** `state/actions.rs` reads
-`config.current.compositor.startup`, but the `Compositor` struct in
-`crownos-config` has no `startup` field. The two checkouts do not compile
-together as-is.
+**Schema skew with crownos-config — fixed locally, not pushed.**
+`state/actions.rs` reads `config.current.compositor.startup`, and on the default
+branch the `Compositor` struct in `crownos-config` has **no `startup` field**, so
+the two checkouts do not compile together. The field has been added to
+`crownos-config`'s `src/schema/compositor.rs` in a working tree, but that change
+is uncommitted: clone both repos today and you still hit the original error.
 
 **Other open TODOs:**
 

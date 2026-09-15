@@ -1,7 +1,8 @@
 # crowncrate-linux
 
-**Status: Skeleton** — compiles, but does almost nothing · Rust · default branch `main` ·
-[repo](https://github.com/Crown-OS/crowncrate-linux)
+**Status: Skeleton** — does not compile on the default branch; compiles with
+local, unpushed fixes, and then does almost nothing · Rust · default branch
+`main` · [repo](https://github.com/Crown-OS/crowncrate-linux)
 
 The desktop side of the CrownOS phone bridge. A daemon that holds a persistent
 connection to a paired phone and carries clipboard, media, notification, call and
@@ -68,10 +69,19 @@ An `Action` trait with `fn handle_message(&self, message: Message)`, and an
 
 ---
 
-## What was wrong, and what was fixed
+## What is wrong, and what has been fixed locally
 
-`cargo check` used to report two errors, with two more defects behind them. All
-four are fixed and the crate compiles.
+`cargo check` on the default branch reports two errors, with two more defects
+behind them.
+
+> **Read this before starting work here.** All four fixes below, and the glib
+> removal, exist only as **uncommitted changes in a working tree** — `Cargo.toml`,
+> `Cargo.lock`, `src/actions/action.rs`, `src/actions/action_manager.rs`,
+> `src/communication/message.rs` and `src/communication/server.rs` are all
+> modified and unpushed. Clone `main` today and you get the original two compile
+> errors and the glib conflict. With the fixes applied, the pinned 1.88.0
+> toolchain and the workspace overlay, the crate passes
+> `cargo check --all-targets`.
 
 1. **`Box<dyn Action>` could not cross a thread boundary.**
    `communication/server.rs::listen` handed the `ActionManager` to a
@@ -85,13 +95,16 @@ four are fixed and the crate compiles.
 4. **`unsubscribe` was inverted.** `retain(|&i, _| i == action)` kept only the
    entry it was asked to remove; it is now `i != action`.
 
-The **glib conflict is gone too.** `Cargo.toml` declared `glib = "0.17"` while
-`gtk4 = "0.7"` requires 0.18, and the lockfile carried both. Nothing in `src/`
-referenced `glib`, so the direct dependency was removed outright.
+The **glib conflict** is addressed in the same unpushed set. `Cargo.toml` on the
+default branch declares `glib = "0.17"` while `gtk4 = "0.7"` requires 0.18, and
+the lockfile carries both. Nothing in `src/` references `glib`, so the direct
+dependency was removed outright.
 
 Compiling is not the same as working: `src/lib.rs` and `src/ui/mod.rs` are empty,
-`src/predule.rs` is unreachable from `main.rs`, and the whole crate is 333 lines.
-It is published as a **0.0.0 placeholder** to hold the name.
+`src/predule.rs` is unreachable from `main.rs`, and the whole crate is 346 lines.
+**It is not published.** Nothing in the Crown-OS organization is on crates.io
+except `crownshell` 0.1.0 and 0.2.0 — there is no placeholder release holding
+this name.
 
 ---
 
@@ -100,13 +113,16 @@ It is published as a **0.0.0 placeholder** to hold the name.
 GTK4 4.10 or newer plus the glib/pango/gdk-pixbuf/graphene development packages.
 See [Prerequisites](../10-getting-started/prerequisites.md#crowncrate-linux).
 
-Formatting note: this is the only repository with a `rustfmt.toml`, and it is a
-liability rather than an asset — an 80-key dump of defaults containing
-`edition = "2015"` (the crate is edition 2024), `required_version = "1.5.1"`
-(rustfmt refuses to run on a mismatch), the deprecated `fn_args_layout`, and a
-number of nightly-only keys with `unstable_features = false`. **Do not copy it.**
-Deleting it and using rustfmt defaults, as every other repo does, is a reasonable
-patch.
+Formatting note: this was the only repository in the organization with a
+`rustfmt.toml`, and it was a liability rather than an asset — an 80-key dump of
+defaults containing `edition = "2015"` (the crate is edition 2024),
+`required_version = "1.5.1"` (rustfmt refuses to run on a mismatch), the
+deprecated `fn_args_layout`, and a number of nightly-only keys with
+`unstable_features = false`. **It has been deleted**, so the crate now formats on
+rustfmt defaults like every other repo, and all eleven Rust repos pass
+`cargo fmt --all --check` on rustfmt 1.88. That deletion is part of the same
+unpushed change set — the file is still tracked on the default branch. Do not
+reinstate it, and do not copy it into a new repo.
 
 ---
 
@@ -138,17 +154,21 @@ Implementing this interface is well-scoped work.
 **There is no pairing, no authentication, and no encryption.** Any peer that can
 reach port 5252 can send a `SHUTDOWN` message and power the machine off.
 
-The crate now compiles, so this **is** reachable if anyone runs it. Nothing
-starts it automatically and it is published only as a 0.0.0 placeholder, but the
-"it doesn't build" mitigation is gone. See [SECURITY.md](../../SECURITY.md).
+On the default branch the "it doesn't build" mitigation still holds, and the
+crate is not published anywhere, so nobody is running it by accident. Once the
+unpushed compile fixes land, that mitigation is gone and the listener **is**
+reachable by anyone who starts it. Fix the authentication before merging the
+build fix, not after. See [SECURITY.md](../../SECURITY.md).
 
 ---
 
 ## Other known gaps
 
 - `src/ui/mod.rs`, `src/lib.rs` and `src/predule.rs` are **zero bytes**. `gtk4`
-  and `glib` are declared but there is no UI. (`predule.rs` mirrors the same
-  typo as `crownshell`'s prelude module.)
+  and `glib` are declared but there is no UI. (`predule.rs` copies the
+  misspelling `crownshell` originally shipped. `crownshell` has since corrected
+  its own to `prelude`; this one is still spelled wrong, and since the file is
+  empty and unreachable, deleting it is simpler than renaming it.)
 - `src/discovery/mod.rs` is 13 lines: bind a socket, return.
 - `src/logging.rs` mixes `fn log(&mut self, ..)` with receiver-less
   `warn`/`debug`/`error` in one trait; `FileLogger` is imported in `main.rs` and
@@ -163,9 +183,9 @@ starts it automatically and it is published only as a 0.0.0 placeholder, but the
 
 | Repo | Role | State |
 |---|---|---|
-| `crowncrate-linux` | Server | Does not compile |
+| `crowncrate-linux` | Server | Does not compile on `main`; compiles with unpushed fixes |
 | [`crowncrate-android`](crowncrate-android.md) | Client | Android Studio template; no network permission |
-| [`crowncrate-chrome`](crowncrate-chrome.md) | Browser client | No commits |
+| [`crowncrate-chrome`](crowncrate-chrome.md) | Browser client | Empty bare repo — zero commits, zero objects |
 
 **The two halves have never communicated.**
 

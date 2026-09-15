@@ -45,6 +45,19 @@ and no transport encryption**. Handled actions include:
 
 Anyone on the same network can shut the machine down.
 
+**A dispatch bug that made this considerably worse has been fixed.**
+`ActionManager::notify` used to fan a message out to *every* registered action
+and let each decide whether it applied. `VolumeAction` and `ClipboardAction`
+checked `message.method`; `ShutdownAction` took `_message` and ignored it — so
+any decodable CBOR frame, of *any* method, from any host that could reach the
+port ran `shutdown now`. `notify` now looks the method up in the action table,
+which is what that table was always keyed by.
+
+That narrows the exposure to what the paragraph above already describes: an
+unauthenticated listener where a deliberate `SHUTDOWN` message still works.
+Pairing and authentication remain unimplemented. Do not run it on a network you
+do not control.
+
 **This changed in August 2026.** The crate previously did not compile, and that
 was the only thing preventing exploitation. It compiles now. Nothing starts it
 automatically and it is published only as a `0.0.0` placeholder, so the exposure

@@ -1,6 +1,7 @@
 # lls-protocol
 
-**Status: Skeleton** — compiles, but does almost nothing · Rust · default branch `main` ·
+**Status: Skeleton** — does not build on the default branch; builds with local,
+unpushed fixes, and then does almost nothing · Rust · default branch `main` ·
 [repo](https://github.com/Crown-OS/lls-protocol)
 
 A low-latency audio/video streaming protocol, intended to carry screen mirroring
@@ -12,8 +13,9 @@ Roughly 119 lines of real code across two commits. It is a skeleton.
 
 ## What "lls" stands for
 
-**Not stated anywhere.** The string appears only as the crate name — no README,
-no doc comment, no commit message expands it.
+**Not stated anywhere.** The string appears only as the crate name — no doc
+comment and no commit message expands it. A README now exists in the working
+tree, but it is an **untracked local addition** and is not on the default branch.
 
 The most likely reading is **Low-Latency Streaming**, supported by two lines of
 evidence:
@@ -87,9 +89,18 @@ drain or pop.
 
 ---
 
-## What was wrong, and what was fixed
+## What is wrong, and what has been fixed locally
 
-Three problems, in the order you hit them. All are fixed; the crate compiles.
+Three problems, in the order you hit them.
+
+> **All three fixes are uncommitted.** The root `Cargo.toml` is now a virtual
+> workspace with a real `[workspace.dependencies]` table and members `client` and
+> `server`; `Connection::connect` binds and connects a socket properly. Those
+> edits — plus `Cargo.lock`, `client/Cargo.toml` and `server/Cargo.toml` — sit
+> modified and unpushed in a working tree. On the default branch every error
+> below is still exactly what you get, starting with `cargo metadata` failing
+> before a single crate is looked at. With the fixes and the pinned 1.88.0
+> toolchain, both members pass `cargo check --all-targets`.
 
 **1. The root package has no targets.** The root `Cargo.toml` declares both a
 `[workspace]` and a `[package]` named `lls-protocol`, but there is no `src/` at
@@ -169,14 +180,18 @@ The apparent division of labour:
 
 ## If you want to work on it
 
-Suggested order:
+Suggested order. Steps 1 and 2 are already written and sitting unpushed — ask a
+maintainer before redoing them:
 
 1. Remove the root `[package]` — the workspace has no root crate — and move
    `serde`, `tokio` and `tokio-stream` into `[workspace.dependencies]`, which is
-   what the members already reference.
-2. Fix `Connection::connect` to bind a socket properly.
+   what the members already reference. *(Done locally, not pushed.)*
+2. Fix `Connection::connect` to bind a socket properly. *(Done locally, not
+   pushed.)*
 3. Move `packet`, `protocol` and `discovery` into a shared crate both `client`
-   and `server` depend on.
+   and `server` depend on. Nothing currently claims the `lls-protocol` crate
+   name — that shared member would be the thing to publish it under, if the
+   organization ever publishes anything beyond `crownshell`.
 4. Implement `MediaPacket::parse` and a matching serialiser.
 5. Complete the reorder buffer — it needs a drain with a playout deadline.
 

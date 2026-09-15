@@ -28,7 +28,7 @@ install_dir="arch"
 install guide. `pacman.conf` enables only `[core]` and `[extra]` — there is no
 CrownOS repository configured.
 
-`packages.x86_64` is upstream's 127-package rescue set: filesystem tools, network
+`packages.x86_64` is upstream's 128-package rescue set: filesystem tools, network
 tools, firmware, VM guest agents, `archinstall`. **No compositor, no Wayland
 stack, no CrownOS component, no AI runtime.**
 
@@ -84,18 +84,33 @@ image. See [SECURITY.md](../../SECURITY.md).
 
 ## Building it
 
-CI here runs `shellcheck` only. **There is no build script or Makefile, and CI
-does not build the image** — the profile is consumed by the external `mkarchiso`
-tool from the `archiso` package:
+**There is no CI here, or anywhere in the organization** — no workflow has ever
+run, and the `Crown-OS/.github` repo that would host them does not exist on
+GitHub. Nothing builds the image automatically.
+
+A `build.sh` now exists at the repository root. It is cross-distro: native
+`mkarchiso` when the host is Arch, and a privileged Arch container otherwise, so
+"you need an Arch box to build the image" is no longer true.
 
 ```bash
-sudo pacman -S archiso
-sudo mkarchiso -v -w /tmp/crownos-work -o /tmp/crownos-out ./crownos-iso
+./build.sh                 # native on Arch, container elsewhere
+./build.sh --check         # report what this machine can do, build nothing
+./build.sh --container     # force the container even on Arch
+./build.sh --out DIR       # default ./out
 ```
 
-Requires root and an Arch host. *(The exact invocation is inferred from the
-profile layout and `buildmodes` — nothing in the repo documents it. Adding a
-build script and a README is worthwhile work.)*
+> **`build.sh` is not on the default branch.** It is newly added and currently
+> **untracked**, along with a `.gitignore` and a GPL-3.0-or-later `LICENSE`. A
+> visitor cloning `main` today sees none of the three, and has to invoke
+> `mkarchiso` by hand:
+>
+> ```bash
+> sudo pacman -S archiso
+> sudo mkarchiso -v -w /tmp/crownos-work -o /tmp/crownos-out ./crownos-iso
+> ```
+>
+> That invocation is inferred from the profile layout and `buildmodes` — nothing
+> committed to the repo documents it. It needs root and an Arch host.
 
 ---
 
@@ -119,13 +134,16 @@ Roughly, in order:
 
 ## Licensing
 
-This repository has **no LICENSE file**, and it is a verbatim copy of Arch
-Linux's archiso `releng` profile, whose scripts carry
+This repository has **no LICENSE file on its default branch**, and it is a
+verbatim copy of Arch Linux's archiso `releng` profile, whose scripts carry
 `SPDX-License-Identifier: GPL-3.0-or-later`.
 
-Redistributing GPL-3.0 content under an unlicensed or MIT umbrella is a problem
-that needs resolving before any release. See
-[Project status](../00-overview/project-status.md#licensing).
+A GPL-3.0-or-later `LICENSE` — the correct answer for a derived archiso profile —
+has been added to the working tree, but it is **untracked and unpushed**, so the
+problem still stands on `main`. Only `crownos-setup`, `crownos-documentations`
+and `crownshell` carry a committed LICENSE. Redistributing GPL-3.0 content under
+an unlicensed or MIT umbrella is a problem that needs resolving before any
+release. See [Project status](../00-overview/project-status.md#licensing).
 
 ---
 

@@ -7,7 +7,8 @@ otherwise.
 
 ## Coverage, honestly
 
-270 test functions across 5 of 15 repositories. Six Rust repos have zero tests.
+270 test functions across 5 of the organization's 16 repositories. Six of the
+eleven Rust repos have zero tests.
 
 | Repo | `tests/` | `#[test]` fns | Style |
 |---|---|---|---|
@@ -20,10 +21,12 @@ otherwise.
 | crownos-website | — | 0 | No test framework at all |
 | crowncrate-android | — | 2 | Untouched Android Studio template stubs |
 
-CI runs `cargo test --all` on every push and pull request and it blocks, so a
-failing test stops a merge. There is still **no fixtures directory, no test
-runner script, and no coverage tooling** (`cargo-llvm-cov` and `tarpaulin` are
-both absent).
+**No test has ever run in CI.** `Crown-OS/.github` does not exist on GitHub, so
+`cargo test --all` runs only where someone runs it by hand. The workflows are
+written to run it on every push and pull request and to block on failure — see
+[CI and releases](ci.md) — but until they are pushed, a failing test stops
+nothing. There is also **no fixtures directory, no test runner script, and no
+coverage tooling** (`cargo-llvm-cov` and `tarpaulin` are both absent).
 
 ---
 
@@ -33,8 +36,13 @@ both absent).
 cargo test --all
 ```
 
-That works for `crownpositor`, `crownshell`, `crowndictator` and
-`crownos-config`. Two repos need more care.
+`crownshell` and `crownos-config` need nothing else. `crownpositor` needs the
+`[patch.crates-io]` overlay first — it declares `crownos-config = "0.2"`, which
+is not on crates.io, so without the override cargo fails at `cargo metadata`
+before it runs anything. `crowndictator` additionally needs OpenSSL development
+headers — `ort` -> `ureq` -> `native-tls` -> `openssl-sys`, which nothing in its
+manifest advertises; `./bootstrap.sh` installs them. Two more repos need care
+for reasons of their own.
 
 ### crownotify — needs a live session bus
 
@@ -62,8 +70,8 @@ An ignored test exercises the real phone-bridge daemon rather than a mock:
 cargo test -- --ignored real_crowncrate    # start crowncrate first
 ```
 
-(`crowncrate-linux` does not currently compile or expose D-Bus, so this cannot
-pass today.)
+(`crowncrate-linux` compiles, but its `src/lib.rs` is empty and it exposes no
+D-Bus interface, so this cannot pass today.)
 
 ### crownos-config — one test function, on purpose
 
@@ -157,8 +165,9 @@ because their inputs are just text.
 
 ## Reporting results
 
-CI covers `cargo test`, but not whether the thing actually works on screen. Use
-the PR description for what CI cannot check, and be specific:
+With no CI, the PR description is the only record that anything was run — and it
+is the only place the things a test suite cannot check, like whether the thing
+actually works on screen, can be recorded at all. Be specific:
 
 ```
 cargo test --all             → 42 passed, 0 failed

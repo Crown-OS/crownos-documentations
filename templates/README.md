@@ -3,9 +3,10 @@
 Canonical GitHub templates for the Crown-OS organization, kept here so there is
 one copy to edit.
 
-Every repository now has a `.github/workflows/` directory (CI callers), but
-**none of them has the issue or pull request templates installed yet.** These
-are staged for you to copy where you want them.
+These are **installed in `Crown-OS/.github`**, which GitHub applies to every
+repository in the organisation that does not carry its own — so there is one copy
+to edit rather than sixteen. They stay here as the source you edit; copy the
+result across if a repo ever needs to override the org default.
 
 ```
 .github/
@@ -46,10 +47,11 @@ the human-facing templates only.
 **No CODEOWNERS.** Review is by a human reading the diff; there is no branch
 protection to enforce ownership.
 
-**No `dependabot.yml`.** Several crates pin git dependencies with no `rev`, which
-Dependabot cannot help with and automated bumps would make worse. Fix the pinning
-first — see
-[Dependency graph](../docs/20-architecture/dependency-graph.md#version-skew).
+**No `dependabot.yml`.** Not because of git pinning — there are no git
+dependencies left in the tree. Because `crown-versions.toml` in `Crown-OS/.github`
+is the single declaration of every dependency more than one repo uses, and
+per-repo bumps would fight it. Raise versions there, then propagate with
+`scripts/sync-versions.py`.
 
 ## Also worth copying
 

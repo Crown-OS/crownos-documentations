@@ -19,19 +19,25 @@ that is a bare skeleton as your first task.
 
 One maintainer approval is required before merge.
 
-> CI runs on every push and pull request, from reusable workflows in
-> [`Crown-OS/.github`](https://github.com/Crown-OS/.github). **`rustfmt` and the
-> test suite block; clippy is advisory for now.** There is still **no CODEOWNERS
-> file and no branch protection**, so approval is enforced by convention rather
-> than by GitHub. Run the checks locally anyway — it is faster than waiting for
-> a runner.
+> **There is no CI.** No workflow has ever run in any Crown-OS repository. The
+> `Crown-OS/.github` repository that the workflows would be centralised in does
+> not exist on GitHub — the URL 404s — and the workflow files that exist locally
+> are untracked. There is also **no CODEOWNERS file and no branch protection**.
+> Every check is run by you, on your machine, and reported in the PR description.
+>
+> When CI is created, the intent is that `rustfmt` and the test suite block a
+> merge while **clippy stays advisory**, because the tree does not pass
+> `-D warnings` today.
 
 ---
 
 ## Quickstart
 
 ```bash
-# 1. Fork the target repo on GitHub, then clone your fork. Anywhere is fine.
+# 0. Set up the workspace first — see the note below this block. A bare clone
+#    of most Rust repos does not resolve its dependencies.
+
+# 1. Fork the target repo on GitHub, then clone your fork into the workspace.
 git clone git@github.com:<you>/<repo>.git
 
 # 2. Create a branch
@@ -48,22 +54,33 @@ git rebase origin/main
 # 5. Open a PR — mark as Draft if work is still in progress
 ```
 
-**Any layout works.** Crates depend on published crates.io versions, so a single
-`git clone` builds anywhere. You only need siblings if you are changing
-`crownshell` or `crownos-config` and want a component to see it — and then the
-override goes in a `.cargo/config.toml` *above* your checkouts, never in a
-committed `Cargo.toml`. See
-[Workspace setup](docs/10-getting-started/workspace-setup.md#developing-across-repositories).
+**A plain clone does not build.** `crownbar`, `crowndock`, `crownotify`,
+`crowndictator` and `crownpositor` declare `crownshell = "0.3"` and
+`crownos-config = "0.2"`, and **neither version exists on crates.io** — only
+`crownshell` 0.1.0 and 0.2.0 are published, and nothing else in the organization
+is published at all. A fresh clone of any of those repos fails at
+`cargo metadata`, before a single crate is compiled.
+
+The only thing that makes them resolve is a `[patch.crates-io]` overlay in a
+`.cargo/config.toml` placed *above* your checkouts, pointing `crownshell` and
+`crownos-config` at local siblings. It is **mandatory**, not a convenience for
+cross-repo work, and it never goes in a committed `Cargo.toml`.
+`crownos-setup`'s `./bootstrap.sh --dev` clones every repo and writes that file
+for you. Full detail:
+[Workspace setup](docs/10-getting-started/workspace-setup.md#the-overlay-mandatory).
 
 ---
 
 ## Project layout
 
-CrownOS is a **multi-repo** organization — 17 repositories, no monorepo, no
-umbrella Cargo workspace. Crates depend on each other by published crates.io
-version, never by path or git, which is what makes every checkout resolve
-identically. Full detail with status markers is in the
-[Component map](docs/00-overview/component-map.md); the short version:
+CrownOS is a **multi-repo** organization — GitHub lists **16 repositories**, no
+monorepo, no umbrella Cargo workspace. Eleven of them are Rust. Crates declare
+each other by crates.io version rather than by path or git, but those versions
+are not published yet, so the versions resolve through the local overlay
+described above. Full detail with status markers is in the
+[Component map](docs/00-overview/component-map.md); the short version (the table
+also lists `crowncrate-chrome`, which is an empty bare repository and does not
+appear in the org listing):
 
 | Repository | Purpose | Language | Default branch |
 |---|---|---|---|
@@ -277,8 +294,13 @@ cargo clippy --all-targets --all-features -- -D warnings
 cargo test --all
 ```
 
-- Follow `rustfmt` defaults. The one `rustfmt.toml` in the org
-  (`crowncrate-linux`) is a legacy artifact and should not be copied.
+- `cargo fmt` and `cargo test` are the ones to take seriously. **Clippy is
+  advisory** — the tree does not pass `-D warnings`, so expect a wall of
+  warnings that have nothing to do with your change. Fix the ones you
+  introduced; do not turn a lint sweep into your PR.
+- Follow `rustfmt` defaults. No repository should carry a `rustfmt.toml`; the
+  one that did (`crowncrate-linux`) held a legacy defaults dump and has been
+  deleted. Do not add another.
 - Edition 2024 for all new crates. Minimum toolchain is **Rust 1.88**, pinned
   per repo in `rust-toolchain.toml`.
 - Document the *why*. The best-documented crate in the org is
@@ -320,8 +342,8 @@ archiso, so there is little to check yet.
 
 ## CI
 
-How it is wired, what blocks a merge, and how releases work:
-[CI and releases](docs/40-contributing/ci.md).
+There is none yet. What is intended, and how releases are meant to work once it
+exists, is in [CI and releases](docs/40-contributing/ci.md).
 
 ---
 
@@ -356,14 +378,16 @@ whether it touches one repo or several.
 
 ## Releases and changelog
 
-`crownshell` is published on crates.io (0.2.0, with docs.rs builds) and carries
-the organization's only git tag. The remaining crates are being published now —
-the order, and what blocks each one, is in
-[Releasing](docs/40-contributing/releasing.md).
+`crownshell` is **the only crate published on crates.io** — 0.1.0 and 0.2.0,
+with docs.rs builds — and `crownshell v0.2.0` is the organization's only git tag.
+Nothing else has been published: not `crownos-config`, not `crownuikit`, not any
+of the applications. The order in which the rest go out, and what blocks each
+one, is in [Releasing](docs/40-contributing/releasing.md).
 
-A `v*` tag runs `publish.yml`, which pushes to crates.io, and `release.yml`,
-which attaches a binary tarball to a draft GitHub Release. There is no
-`CHANGELOG.md` yet and nothing is published to the AUR.
+Publishing is manual today. The `publish.yml` and `release.yml` workflows are
+described in that page as the intended mechanism, but no workflow has ever run —
+see the note under [Maintainers](#maintainers). There is no `CHANGELOG.md` and
+nothing is published to the AUR.
 
 Conventional Commits are adopted now so that changelog generation becomes possible
 later. When releases begin, changelogs will be published in this repository.

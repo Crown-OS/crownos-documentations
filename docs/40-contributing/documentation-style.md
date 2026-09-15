@@ -49,7 +49,7 @@ same commit.
 ```markdown
 # <name>
 
-**Status: <marker>** · <language> · default branch `<branch>` · [repo](…)
+**Status: <marker>** · <language> · default branch `<branch>` · [repo](https://github.com/Crown-OS/<name>)
 
 One or two sentences on what it is.
 
@@ -110,7 +110,7 @@ the function.
   bold, nothing is.
 - **Blockquotes for warnings and caveats**, prefixed with a bold lead:
   ```markdown
-  > **The prelude module is spelled `predule`.** A typo in the public API…
+  > **Write `prelude`, not `predule`.** The misspelling is deprecated…
   ```
 
 ### Links

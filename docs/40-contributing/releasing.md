@@ -3,6 +3,13 @@
 How CrownOS versions, publishes and ships. Read
 [CI and releases](ci.md) first for how the workflows are wired.
 
+> **Nothing on this page has happened yet.** Two crates exist on crates.io —
+> `crownshell` 0.1.0 and 0.2.0 — and both were published by hand. No other
+> CrownOS crate is on any registry. The only git tag in the organization is
+> `crownshell v0.2.0`. `publish.yml` and `release.yml` have never run, because
+> `Crown-OS/.github` does not exist on GitHub. Read this as the plan, not as a
+> record.
+
 ---
 
 ## Why crates.io matters here
@@ -25,21 +32,26 @@ Depending on a published version removes the question:
 crownshell = "0.3"      # the same bytes for everyone, forever
 ```
 
-Local cross-repo work uses an override that lives **outside** every repository,
-so a checkout can never disagree with CI — see
-[Workspace setup](../10-getting-started/workspace-setup.md#developing-across-repositories).
+That is the destination, not the current state. **`crownshell` 0.3 has never
+been published**, and neither has `crownos-config` 0.2, which the same manifests
+also name. Until they are, every repo that depends on them resolves only through
+a `[patch.crates-io]` override living **outside** every repository — mandatory,
+not optional. See
+[Workspace setup](../10-getting-started/workspace-setup.md#the-overlay-mandatory).
 
 ---
 
 ## Version policy
 
 - [Semantic versioning](https://semver.org/). Pre-1.0, a minor bump may break.
-- Versions live in `Cargo.toml`. `publish.yml` refuses to publish if the tag
-  disagrees with the manifest.
+- Versions live in `Cargo.toml`. `publish.yml` is written to refuse a publish
+  where the tag disagrees with the manifest — once it can run at all.
 - Shared dependency versions are declared once, in
   [`crown-versions.toml`](https://github.com/Crown-OS/.github/blob/main/crown-versions.toml),
-  and `check-versions.py` fails CI on drift.
-- **MSRV is 1.88**, pinned per repo in `rust-toolchain.toml`. Edition 2024 needs
+  with `check-versions.py` to fail on drift. Both live in the unpushed `.github`
+  repository, so neither is enforced today.
+- **MSRV is 1.88.** All eleven Rust crates declare `rust-version = "1.88"` and
+  ship a `rust-toolchain.toml` pinning `channel = "1.88.0"`. Edition 2024 needs
   only 1.85; `vello 0.9` and `xilem 0.4` need 1.88, and the dependency graph
   sets the floor.
 
@@ -47,11 +59,14 @@ so a checkout can never disagree with CI — see
 
 ## Publish order
 
+This is the order to publish in, not a description of what has been published.
+Every crate below is unpublished except `crownshell`, which is at 0.2.0.
+
 The graph is two tiers deep. Within a tier there is no ordering constraint.
 
 | Tier | Crates | Depends on |
 |---|---|---|
-| 0 | `crownshell`, `crownos-config`, `crownuikit`, `crownlauncher`, `lls-client`, `lls-server` | nothing in CrownOS |
+| 0 | `crownshell`, `crownos-config`, `crownuikit`, `crownlauncher`, `crowncrate-linux`, `lls-client`, `lls-server` | nothing in CrownOS |
 | 1 | `crownbar`, `crowndock`, `crownotify`, `crowndictator`, `crownpositor-config` | tier 0 |
 | 2 | `crownpositor` | `crownpositor-config` |
 
@@ -90,12 +105,14 @@ config = { package = "crownpositor-config", path = "../config", version = "0.1.0
 ### Placeholders
 
 `crownlauncher` is a three-line hello-world and `crowncrate-linux` has an empty
-`src/lib.rs` and implements nothing. Both are published at **0.0.0** with a
-"Placeholder — not yet released" description, purely to hold the name.
+`src/lib.rs` and implements nothing. Neither is published, and **there are no
+0.0.0 placeholder crates on crates.io** — that claim has appeared in these docs
+before and is false. The names are unclaimed.
 
-crates.io is append-only: a version can be yanked but never reused, and a name
-is held forever. Shipping a broken crate as 0.1.0 is a permanent public record;
-a 0.0.0 placeholder is not.
+The plan, when the names are worth holding, is to publish each at **0.0.0** with
+a "Placeholder — not yet released" description. crates.io is append-only: a
+version can be yanked but never reused, and a name is held forever. Shipping a
+broken crate as 0.1.0 is a permanent public record; a 0.0.0 placeholder is not.
 
 ---
 
@@ -111,7 +128,7 @@ git tag v0.3.0
 git push origin v0.3.0
 ```
 
-The tag triggers two workflows:
+The tag will trigger two workflows, once `Crown-OS/.github` is pushed:
 
 - **`publish.yml`** — verifies the tag matches the manifest, dry-runs, then
   `cargo publish --locked`.
@@ -120,8 +137,13 @@ The tag triggers two workflows:
 
 Draft, so you review before publishing.
 
-`cargo publish --dry-run` also runs on every pull request, so metadata problems
-surface long before a tag is cut.
+Neither has ever fired. `crownshell` 0.1.0 and 0.2.0 were published from a
+maintainer's machine, and `crownshell v0.2.0` is the only tag any repo carries.
+Until the workflows exist, step 2 is not a formality — it is the whole check.
+
+`cargo publish --dry-run` is also meant to run on every pull request so metadata
+problems surface long before a tag is cut. That too is waiting on the `.github`
+repository.
 
 ### Setup, once
 
@@ -133,18 +155,52 @@ publish-update only, and add it under the organization's Actions secrets.
 
 ## Known publishing hazards
 
-**`crowndictator` will fail on docs.rs.** `ort` is declared with the `cuda`
-feature and without `default-features = false`, so `ort-sys` downloads a
-prebuilt ONNX Runtime during the build. docs.rs
-[blocks network access](https://docs.rs/about/builds) and will never enable it,
-so the docs build goes red permanently. A `[package.metadata.docs.rs]` block
-cannot fix this — it cannot switch off a default feature of a transitive
-dependency. The fix is `default-features = false` plus moving `cuda` behind an
-opt-in feature, in `crowndictator`'s own manifest. Publish it last.
+**`crowndictator` will still fail on docs.rs.** Half of this is now fixed: `ort`
+is declared `default-features = false` with `tls-rustls`, which removed
+native-tls and therefore system OpenSSL from the graph entirely — that was the
+reason this was the one crate in the tree that would not compile. But
+`download-binaries` is still enabled, so `ort-sys` fetches a prebuilt ONNX
+Runtime during the build, and docs.rs
+[blocks network access](https://docs.rs/about/builds) and will never enable it.
+The remaining fix is to put the ASR backend behind an opt-in feature so
+`[package.metadata.docs.rs]` has something to switch off. Until then this crate
+has no rendered documentation. Publish it last.
 
-**`crownshell`'s `predule` typo is already frozen.** 0.1.0 and 0.2.0 both shipped
-the misspelling. 0.3.0 adds `prelude` and keeps `predule` as a deprecated
-re-export; removing it waits for 1.0.
+**Ownership is one person.** `crownshell` on crates.io is owned solely by the
+user account that published it. For an organisation that is a bus factor of one:
+nobody else can publish, yank, or add an owner. Create a `publishers` team in the
+GitHub organisation and add it as a crates.io owner before the other twelve
+crates go out, so ownership is org-level from the start rather than a migration
+later:
+
+```bash
+cargo owner --add github:Crown-OS:publishers crownshell
+```
+
+**The names are unclaimed, not reserved.** Every CrownOS crate name except
+`crownshell` is currently free on crates.io — `crownos-config`, `crownuikit`,
+`crownbar`, `crowndock`, `crownotify`, `crowndictator`, `crownlauncher`,
+`crownpositor`, `crownpositor-config`, `crowncrate-linux`, `lls-client`,
+`lls-server`, and `lls-protocol` and `crownos` besides. Free means anyone can
+take them. Publishing `0.0.0` placeholders is the only way to hold a name.
+
+**`crownshell`'s `predule` typo is fixed in the unpublished 0.3.0.** 0.1.0 and
+0.2.0 both shipped the misspelling, so removing it outright would break every
+existing consumer. 0.3.0 is a breaking release and therefore the last cheap
+moment to correct it: `src/prelude.rs` is now the real module, and `predule`
+remains as a `#[deprecated]` re-export of it, scheduled for removal in 0.4.0.
+
+That fix is local and unpushed, like the rest of 0.3.0. It has to go out *with*
+0.3.0 — if 0.3.0 publishes without it, the typo is frozen for another release.
+
+**Every committed `Cargo.lock` in a dependent repo is contaminated.** The locks
+in `crownbar`, `crowndock`, `crownotify`, `crowndictator` and `crownpositor`
+were generated inside the patched tree: they record `crownshell` and
+`crownos-config` with **no `source =` line**, and carry `[[patch.unused]]`
+stanzas. `cargo build --locked` from a fresh clone fails on them, and
+`cargo publish --locked` would too. Regenerate each lock outside the patch
+overlay — against the real registry, after the dependency is actually published
+— before publishing anything.
 
 **Binary crates need system libraries that `cargo install` will not provide.**
 `cargo install crownpositor` fails on a machine without libdrm, libinput,

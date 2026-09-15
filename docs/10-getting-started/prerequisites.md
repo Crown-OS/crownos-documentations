@@ -22,8 +22,8 @@ of your distribution**, in three layers it falls through automatically:
 3. **A container** reproducing CI exactly.
 
 Whether it worked is decided by **`pkg-config`**, not by the package manager's
-exit code. Module names — `wayland-client`, `libseat`, `pixman-1` and 24 others —
-are identical on every distro, so `--check` is correct even on a system with no
+exit code. The 27 module names — `wayland-client`, `libseat`, `pixman-1` and 24
+others — are identical on every distro, so `--check` is correct even on a system with no
 package-name mapping, and a wrong package name is caught rather than producing a
 broken build. Two were wrong before this check existed: `libfontconfig-1-dev`,
 which exists on neither Debian nor Ubuntu and was in CI too, and openSUSE's
@@ -43,7 +43,7 @@ needed, and the traps that are not package names.
 
 ### Rust
 
-Twelve of the seventeen repos are Rust. Every crate is **edition 2024**, and the
+Eleven of the sixteen repos are Rust. Every crate is **edition 2024**, and the
 minimum toolchain is **Rust 1.88**.
 
 Edition 2024 itself only needs 1.85, and 1.85 is what the repos used to declare.
@@ -51,17 +51,23 @@ That was wrong: `vello 0.9` and `xilem 0.4` both declare `rust-version = "1.88"`
 and `wgpu 29` and `zbus 5.16` declare 1.87. The dependency graph sets the floor,
 not the edition.
 
-Every Rust repo now pins the toolchain in `rust-toolchain.toml`, so rustup
-installs the right one automatically the first time you build.
+Every Rust repo pins the toolchain **exactly** — `channel = "1.88.0"`, not
+`stable` — in a `rust-toolchain.toml`. rustup honours that pin: the first time
+you build inside a checkout it downloads 1.88.0 and uses it, whatever your
+default toolchain is. Installing or defaulting to `stable` changes nothing about
+what these repos compile with.
+
+So all you need is rustup itself:
 
 ```bash
-rustup toolchain install stable
-rustup default stable
-rustc --version    # must be >= 1.88
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+cd crownshell && rustc --version    # prints 1.88.0, from the pin
 ```
 
-`crownpositor` uses let-chains and `resolver = "3"`, so a recent stable is
-safest.
+`crownos-setup`'s `bootstrap.sh` installs rustup if it is missing.
+
+One exception: the `issue1` worktree in `crowndictator` has no
+`rust-toolchain.toml`, so it builds with whatever your default toolchain is.
 
 ### Other toolchains
 
@@ -107,7 +113,9 @@ surface creation. No package list can check this for you.
   "fix" this by re-enabling the feature.
 - **Real hardware needs a seat.** The KMS backend requires `seatd` running or a
   systemd-logind session. For development use the nested backend:
-  `CROWN_BACKEND=winit cargo run`. See [Build and run](build-and-run.md).
+  `CROWN_BACKEND=winit cargo run`. That is also the only way to see CrownOS at
+  all today — see
+  [Try it without installing](../60-users/try-it-without-installing.md).
 
 ### crownbar
 
@@ -138,6 +146,12 @@ package list.
   hard build dependency even with no NVIDIA stack — though the runtime falls
   back to CPU. It is also why `crowndictator`'s docs.rs build fails: docs.rs
   blocks network access.
+- **OpenSSL.** Not obvious from the manifest: `ort` reaches `openssl-sys`
+  through `ureq` and `native-tls`, so `crowndictator` needs OpenSSL development
+  headers to build at all. This was missing from the dependency lists and is now
+  in `deps.toml`'s `dictation` group, so `./bootstrap.sh` installs it. If you
+  installed packages by hand from an older list, add it: `openssl` on Arch,
+  `libssl-dev` on Debian/Ubuntu, `openssl-devel` on Fedora, Void and openSUSE.
 - **A large first-run download.** Model weights from Hugging Face on first use:
   roughly **700 MB** int8 (CPU), **2.5 GB** fp32 (GPU), into
   `~/.cache/huggingface/hub`. Which one depends on whether CUDA initialises.
@@ -185,5 +199,5 @@ without building the compositor at all.
 
 ## Next
 
-[Workspace setup](workspace-setup.md) — how to lay out your checkouts. Get this
-wrong and several crates will not build.
+[Workspace setup](workspace-setup.md) — how to lay out your checkouts and write
+the `[patch.crates-io]` overlay. Five repos do not build at all without it.

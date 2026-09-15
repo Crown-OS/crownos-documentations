@@ -30,8 +30,12 @@ comments. Its implementation is
 **section** — One settings file. `appearance.ron` is the `appearance` section.
 The settings-menu page name and the file name are deliberately the same string.
 
-**predule** — `crownshell`'s prelude module. The typo is in the public API and
-every downstream crate uses it. Not `prelude`.
+**prelude** — `crownshell`'s prelude module, `crownshell::prelude`. Use this
+spelling.
+
+**predule** — The misspelling `crownshell` shipped in 0.1.0 and 0.2.0. Since
+0.3.0 it is a `#[deprecated]` re-export of `prelude`, kept so existing code
+still compiles, and scheduled for removal in 0.4.0.
 
 ---
 

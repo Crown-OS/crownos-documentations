@@ -55,8 +55,25 @@ packages. Beyond those:
 - **Injection tools**: `wtype`, `ydotool`, or `wl-clipboard` plus `libnotify`.
 - A `wlr-layer-shell` compositor for the overlay.
 
-Both `crownshell` and `crownos-config` are **path** dependencies, so it needs the
-[flat sibling layout](../10-getting-started/workspace-setup.md).
+On the default branch both `crownshell` and `crownos-config` are **path**
+dependencies (`../crownshell`, `../crownos-config`), so it hard-requires a flat
+sibling layout. A local, unpushed change replaces them with
+`crownshell = "0.3"` and `crownos-config = "0.2"` — **neither version exists on
+crates.io**, so that manifest resolves only through the `[patch.crates-io]`
+overlay above your checkouts. Either way you need the siblings. See
+[Workspace setup](../10-getting-started/workspace-setup.md#the-overlay-mandatory).
+
+> **It needs OpenSSL development headers**, which is not obvious from the
+> feature list: `ort` pulls `ureq`, which pulls `native-tls`, which pulls
+> `openssl-sys`, whose build script fails without them. They are now in
+> `crownos-setup`'s `deps.toml` under the `dictation` group, so
+> `./bootstrap.sh --dev` installs them. With those headers, the overlay and the
+> pinned 1.88.0 toolchain, `crowndictator` passes `cargo check --all-targets` —
+> as do all eleven Rust repositories, and all eleven pass
+> `cargo fmt --all --check` on rustfmt 1.88.
+
+There is also a second worktree, `issue1`, still on the path dependencies and
+with **no `rust-toolchain.toml`**, so it does not get the pinned compiler.
 
 ---
 

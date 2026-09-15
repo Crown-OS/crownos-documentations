@@ -9,21 +9,24 @@ detail.
 
 ## Before anything else
 
-**CI runs on every push and pull request**, from reusable workflows in
-[`Crown-OS/.github`](https://github.com/Crown-OS/.github). For Rust repos that
-is `cargo fmt --check`, a build, clippy, and `cargo test`.
+**Nothing checks your pull request automatically.**
+[`Crown-OS/.github`](https://github.com/Crown-OS/.github) does not exist on
+GitHub, so the reusable workflows have never run and no repository has a
+workflow history. Once that repository is pushed, Rust repos will run
+`cargo fmt --check`, a build, clippy and `cargo test` on every push and pull
+request — see [CI and releases](ci.md).
 
 Two caveats worth internalising:
 
-- **Clippy does not block yet.** It runs and reports to the job summary, but a
-  warning will not fail your PR. Read it anyway.
+- **Clippy will not block, even then.** It is to run and report to the job
+  summary, but a warning will not fail your PR. Read it anyway.
 - **There is no CODEOWNERS and no branch protection.** Approval is enforced by
   convention, not by GitHub.
 
-Run the checks locally before pushing — it is faster than a round trip through a
-runner, and the "what I ran and what it said" section of your PR description
-still carries weight for anything CI cannot check, like whether the bar actually
-renders.
+So run the checks locally before pushing. Until CI exists it is the only thing
+that runs them at all, and the "what I ran and what it said" section of your PR
+description is the only evidence a reviewer gets — including for anything CI
+could never check, like whether the bar actually renders.
 
 ---
 
@@ -102,7 +105,7 @@ Scopes are in [CONTRIBUTING.md](../../CONTRIBUTING.md#scopes).
 
 ## 5. Check locally
 
-CI runs these too — see [CI and releases](ci.md) — but locally is faster.
+Locally is the only place these run today — see [CI and releases](ci.md).
 
 ```bash
 cargo fmt --all
@@ -114,8 +117,12 @@ Per-language commands and their caveats:
 [Code standards](code-standards.md). Test-specific traps (D-Bus, the global
 config dir): [Testing](testing.md).
 
-Establish a baseline **before** you start, because several crates do not build on
-their default branch. If `cargo build` fails on a clean checkout, check
+Establish a baseline **before** you start. A clean clone of `crownbar`,
+`crowndock`, `crownotify`, `crowndictator` or `crownpositor` does not even reach
+the compiler — it fails at `cargo metadata` with
+`failed to select a version for crownshell ^0.3`, because that version has never
+been published. You need the `[patch.crates-io]` overlay described below before
+any of these commands mean anything. If something still fails, check
 [Project status](../00-overview/project-status.md) before debugging your
 environment.
 
@@ -191,10 +198,12 @@ affects `crownotify` and `crowndictator`, and that exact change is what broke
 
 ### Seeing your change locally
 
-Every crate depends on a **published crates.io version**, so a local edit to
-`crownshell` is invisible to `crownbar` until you say otherwise. Do not change
-the dependency in `Cargo.toml` — put the override in a `.cargo/config.toml`
-**above** your checkouts:
+Every crate depends on a **version**, not a path — and the versions the manifests
+name (`crownshell = "0.3"`, `crownos-config = "0.2"`) do not exist on crates.io.
+Only `crownshell` 0.1.0 and 0.2.0 have ever been published. So the override is
+not how you make a local edit visible; it is how the build resolves at all. Do
+not change the dependency in `Cargo.toml` — put the override in a
+`.cargo/config.toml` **above** your checkouts:
 
 ```toml
 # ~/src/crownos/.cargo/config.toml   (untracked, in no repo)
@@ -202,8 +211,9 @@ the dependency in `Cargo.toml` — put the override in a `.cargo/config.toml`
 crownshell = { path = "crownshell" }
 ```
 
-`crownos-setup bootstrap.sh --dev` writes it. Full detail:
-[Workspace setup](../10-getting-started/workspace-setup.md#developing-across-repositories).
+`crownos-setup`'s `./bootstrap.sh --dev` writes it, and you need it before
+anything downstream of `crownshell` will build. Full detail:
+[Workspace setup](../10-getting-started/workspace-setup.md#the-overlay-mandatory).
 
 ### Getting it merged
 
@@ -212,17 +222,20 @@ crownshell = { path = "crownshell" }
 2. Open the downstream PRs referencing it.
 3. Ask a maintainer to sequence the merges.
 
-CI helps here: `crownotify`, `crowndictator` and `crownpositor` clone their
-dependencies and patch to them, so their pull requests build against the current
-state of `crownshell`/`crownos-config` rather than the last release. A breaking
-change shows up on the downstream PR rather than after publishing.
+CI will help here once it exists: `crownbar`, `crowndock`, `crownotify`,
+`crowndictator` and `crownpositor` clone their dependencies and patch to them, so
+their pull requests build against the current state of
+`crownshell`/`crownos-config`. Today nobody sees a breaking change until a
+downstream maintainer builds by hand.
 
 ### Then release in order
 
 A downstream crate cannot be *published* until its dependency is on crates.io —
 `release.yml` deliberately builds against published versions only. So the merge
 order and the release order are the same: `crownshell` first, then everything
-that depends on it. See [Releasing](releasing.md#publish-order).
+that depends on it. Nothing but `crownshell` 0.1.0 and 0.2.0 has been published
+so far, so that order is still entirely ahead of the project. See
+[Releasing](releasing.md#publish-order).
 
 ---
 

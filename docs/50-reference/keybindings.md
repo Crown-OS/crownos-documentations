@@ -122,25 +122,47 @@ Rules:
 - **An empty `keybinds` list means "use the built-in defaults"**, not "nothing
   bound" — otherwise a fresh install would have no way to quit.
 - **To genuinely bind nothing**, write one row with `keys: "None"`.
-- **A malformed row is logged and skipped**, not fatal. The rest of the file
-  still loads.
+- **A row whose chord or action string is malformed is logged and skipped**, not
+  fatal. The rest of the file still loads.
+- **But `keys` and `action` are both mandatory.** `Binding` has no
+  `#[serde(default)]`, so a row that omits either one fails the parse of the
+  whole file — and that silently reverts all of `compositor.ron` to defaults.
+  See [Binding](config-schema.md#binding).
 - **Changes apply live.** `crownpositor` watches `compositor.ron`, so a rebind
   takes effect without a restart.
 
 ### Chord syntax
 
-`Modifier+Modifier+Key`, with modifiers in any order.
+`Modifier+Modifier+Key`, with modifiers in any order. Matching is
+case-insensitive throughout, and spaces around the `+` are tolerated.
 
 | Canonical | Also accepted |
 |---|---|
-| `Super` | `Meta`, `Cmd`, `Win` |
-| `Ctrl` | `Control` |
-| `Alt` | `Option` |
+| `Super` | `logo`, `meta`, `mod4`, `cmd` |
+| `Ctrl` | `control` |
+| `Alt` | `mod1`, `option` |
 | `Shift` | — |
+
+**Key names**, in `compositor.ron`: any single printable ASCII character
+(`q`, `1`, `/`, `-`), plus the named keys `Return`/`Enter`, `Space`, `Tab`,
+`Escape`/`Esc`, `Backspace`, `Delete`/`Del`, `Home`, `End`,
+`PageUp`/`Prior`, `PageDown`/`Next`, `Insert`, `Left`, `Right`, `Up`, `Down`
+and `F1` … `F12`.
+
+**W3C `KeyboardEvent.code` spellings do not parse anywhere in CrownOS.**
+`KeyA`, `ArrowLeft`, `Digit1` and `BracketLeft` are rejected — write `Q`,
+`Left`, `1` and `[` instead.
 
 **Modifier-only chords are valid** — write just `"Super"`. They fire on the
 release edge, which is what makes them usable for hold-style shortcuts and
 toggles.
+
+> The two single-shortcut fields — `keybinds.launcher` and
+> `input.dictation_hotkey` — are **not** parsed by this parser. They are
+> `crownos-config`'s `Keybind` type, which has its own, narrower list of
+> written key labels and a much worse failure mode: a chord it cannot parse
+> silently reverts the whole section to defaults, with nothing logged. See
+> [The Keybind type](config-schema.md#the-keybind-type).
 
 ---
 
@@ -245,6 +267,22 @@ It is **held**, not struck — which is why a modifier-only chord is reasonable
 there. `crowndictator` detects it by reading `/dev/input/event*` directly, so it
 works under any compositor and is not affected by the compositor's binding table.
 See the collision note above.
+
+---
+
+## Known limitations
+
+- **Trackpad gestures have no config path at all.** The four gestures in the
+  table above are compiled into `GestureBindings`; no config section maps a
+  swipe to an action, so they cannot be rebound, disabled, or extended without
+  editing the source.
+- **Keyboard repeat is hardcoded.** The seat is created with a 200 ms delay and
+  a 25 Hz rate, fixed at construction. There is no config field for either, in
+  `input.ron` or anywhere else.
+- **The four-finger gestures are not implemented** — see
+  [Default trackpad gestures](#default-trackpad-gestures).
+- **`keybinds.ron` has no reader** — see
+  [Desktop-wide shortcuts](#desktop-wide-shortcuts).
 
 ---
 

@@ -9,9 +9,18 @@ This repository is the canonical documentation for every repo in the
 **contributors first** — if you want to understand how CrownOS fits together, or
 build a piece of it and send a patch, start here.
 
-> **CrownOS is early.** Most components are pre-1.0, a few do not compile today,
-> and the ISO is not yet a CrownOS ISO. These docs say so explicitly, component
-> by component. Nothing here describes software that does not exist — see
+> **CrownOS is early, and cannot be installed.** There is no image and no
+> package; the only CrownOS crate ever published to crates.io is `crownshell`,
+> a library. A nested compositor session is the only way to run it — see
+> [Try it without installing](docs/60-users/try-it-without-installing.md).
+>
+> A plain `git clone` of most repositories does not build either, because their
+> manifests ask for versions that were never published. A `[patch.crates-io]`
+> overlay above your checkouts is mandatory; see
+> [Workspace setup](docs/10-getting-started/workspace-setup.md#the-overlay-mandatory).
+>
+> These docs say so explicitly, component by component. Nothing here describes
+> software that does not exist — see
 > [Project status](docs/00-overview/project-status.md) for the honest picture.
 
 ---
@@ -23,10 +32,13 @@ build a piece of it and send a patch, start here.
 | Understand what CrownOS is | [What is CrownOS](docs/00-overview/what-is-crownos.md) |
 | See every repo and what it does | [Component map](docs/00-overview/component-map.md) |
 | Know what actually works today | [Project status](docs/00-overview/project-status.md) |
+| **Actually try CrownOS** | [Try it without installing](docs/60-users/try-it-without-installing.md) |
+| Work out why something is broken | [Troubleshooting](docs/60-users/troubleshooting.md) |
 | Set up a dev environment | [Prerequisites](docs/10-getting-started/prerequisites.md) → [Workspace setup](docs/10-getting-started/workspace-setup.md) |
 | Install native packages by hand | [Native packages, per distribution](docs/10-getting-started/native-packages.md) |
 | Build and run something | [Build and run](docs/10-getting-started/build-and-run.md) |
 | Make your first patch | [Your first change](docs/10-getting-started/your-first-change.md) |
+| Help by testing, not coding | [Testing and reporting](docs/40-contributing/testing-and-reporting.md) |
 | Understand the design | [Architecture overview](docs/20-architecture/overview.md) |
 | Contribute code | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Set up any Linux distro | [`crownos-setup`](https://github.com/Crown-OS/crownos-setup) |
@@ -78,7 +90,7 @@ docs/
   30-components/        One page per repository
   40-contributing/      Workflow, code standards, testing, CI, releasing, doc style
   50-reference/         Config schema, env vars, keybindings, glossary
-  60-users/             Installing and using CrownOS
+  60-users/             Running CrownOS, troubleshooting, limitations
 templates/.github/      Issue and PR templates to copy into other repos
 ```
 
@@ -101,4 +113,6 @@ is a bug**. Please open an issue or fix it.
 Documentation in this repository is [MIT licensed](LICENSE).
 
 Individual CrownOS repositories carry their own licensing, and it is currently
-inconsistent — see [Project status](docs/00-overview/project-status.md#licensing).
+inconsistent — three of the sixteen repositories have a LICENSE file on their
+default branch. See
+[Project status](docs/00-overview/project-status.md#licensing).

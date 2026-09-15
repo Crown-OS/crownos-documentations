@@ -51,25 +51,33 @@ the GUI views should pass `default-features = false` — `crownpositor` does;
 
 ## API
 
-```rust
-use crownos_config::{load, save, subscribe_typed, subscribe_key, schema::Appearance};
+Every read, write and subscription names its **section** explicitly — the type
+does not carry it. Use the generated `SECTION` constant rather than a string
+literal, so a rename is a compile error instead of a file that silently stops
+being read.
 
-let mut a: Appearance = load();
+```rust
+use crownos_config::{load, save, subscribe_typed, schema::Appearance};
+
+let mut a: Appearance = load(Appearance::SECTION);
 a.dark_mode = false;
-save(&a);
+save(Appearance::SECTION, &a)?;   // -> io::Result<()>
 
 // Keep the Subscription alive — dropping it unregisters.
-let _sub = subscribe_typed::<Appearance, _>(|a| { /* … */ });
+let _sub = subscribe_typed::<Appearance, _>(Appearance::SECTION, |a| { /* … */ });
 ```
 
-| Function | Delivers |
+| Signature | Delivers |
 |---|---|
-| `load::<T>()` | Parsed section; materialises defaults if the file is missing |
-| `save(&T)` | Atomic write (tmp + rename), records a hash for echo suppression |
-| `subscribe(section, cb)` | Raw contents on change |
-| `subscribe_typed::<T, _>(cb)` | Parsed `T` on change |
-| `subscribe_key(key, cb)` | Only when one specific field changes |
+| `load<T: DeserializeOwned + Serialize + Default>(section: &str) -> T` | Parsed section; materialises defaults if the file is missing. **Never fails** — a parse error yields `T::default()`. |
+| `save<T: Serialize>(section: &str, value: &T) -> io::Result<()>` | Atomic write (tmp + rename), records a hash for echo suppression |
+| `subscribe(section: &str, cb) -> Subscription` | Raw `Vec<u8>` contents on change |
+| `subscribe_typed::<T, _>(section: &str, cb) -> Subscription` | Parsed `T` on change |
+| `subscribe_key(key, cb) -> Subscription` | Only when one specific field changes. **No section argument** — the key type carries `SECTION`. |
 | `config_dir()` | `$CROWN_CONFIG_DIR`, else `dirs::config_dir()/crownos` |
+
+`load` takes `Serialize` as well as `Deserialize` only because of the
+"materialise the default" step. `save` is the only one that returns a `Result`.
 
 ### Behaviour worth knowing
 
@@ -86,6 +94,9 @@ let _sub = subscribe_typed::<Appearance, _>(|a| { /* … */ });
 
 ### The `section!` macro
 
+The macro lives in `src/key.rs` — beside the `Key` trait whose impls it emits,
+not in `src/schema/`.
+
 Sections are declared through one macro that generates the struct with
 `Serialize`/`Deserialize`/`#[serde(default)]`, a `SECTION` constant, a `Default`
 from the per-field `= value`, a **zero-sized unit key type per field**, and a
@@ -101,7 +112,22 @@ not the string `"dark_mode"`, so a typo is a compile error.
 `dictation_hotkey: "Super+Space"` rather than a nested struct.
 
 Accepted modifier aliases: Super/Meta/Cmd/Win, Ctrl/Control, Alt/Option, Shift.
-Key names are W3C `KeyboardEvent.code` values — `KeyA`, `Space`, `ArrowLeft`.
+
+**Key names are written labels, not W3C `KeyboardEvent.code` values.** Parsing
+goes through `KeyCode::from_label`, so `KeyA`, `ArrowLeft` and `Digit1` **do
+not parse**. The accepted spellings are exactly `A`–`Z`, `0`–`9`, `F1`–`F12`,
+`Space`, `Enter`, `Tab`, `Escape`, `Backspace`, `Delete`, `Insert`, `Home`,
+`End`, `PageUp`, `PageDown`, `CapsLock`, `Up`, `Down`, `Left`, `Right`,
+`Minus`, `Equal`, `LeftBracket`, `RightBracket`, `Backslash`, `Semicolon`,
+`Quote`, `Backquote`, `Comma`, `Period`, `Slash`. Matching is case-insensitive.
+
+`KeyCode::from_code` does accept the W3C names, but nothing on the config path
+calls it — it exists so a UI toolkit recording a chord has nothing to translate.
+
+**A chord that does not parse fails the whole file's parse**, which makes
+`load()` return the section default. One typo silently reverts every field in
+that section, with nothing logged.
+
 Unbinding is the literal value `"None"`.
 
 ### xilem integration
@@ -156,9 +182,6 @@ Five sections have **no reader at all**: `sound`, `wifi`, `bluetooth`, `power`,
 
 ## Known limitations
 
-- **Schema skew with `crownpositor`.** The compositor reads
-  `config.compositor.startup`; the `Compositor` struct here has no `startup`
-  field. The two checkouts do not compile together as-is.
 - **The `xilem` feature is on by default**, which means a headless consumer
   pulls in a whole GUI toolkit unless it opts out.
 - Five sections are defined and unconsumed (above).

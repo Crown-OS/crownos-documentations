@@ -141,9 +141,10 @@ these pages is worthwhile work.
 
 ## Other known issues
 
-- **`README.md` is unmodified `create-next-app` boilerplate.** It describes
-  npm/yarn/pnpm, the Geist font and Vercel deployment, and says nothing about
-  CrownOS or the actual Bun + Biome workflow.
+- **`README.md` is unmodified `create-next-app` boilerplate on the default
+  branch.** It describes npm/yarn/pnpm, the Geist font and Vercel deployment, and
+  says nothing about CrownOS or the actual Bun + Biome workflow. A rewritten
+  README exists in a working tree but is **uncommitted**.
 - No tests, no test framework.
 - A stale branch, `cloudflare/workers-autoconfig`, exists alongside `main`.
 

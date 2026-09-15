@@ -2,15 +2,17 @@
 
 Per-language conventions, and the commands that check them.
 
-CI runs `cargo fmt --check` and `cargo test` on every push and pull request,
-and both block. Clippy runs too but is advisory for now. Run all of it locally
-first — it is faster than a runner round trip.
+**Nothing enforces any of this automatically.** `Crown-OS/.github` does not
+exist on GitHub, so no workflow has ever run. Once it is pushed, `cargo fmt
+--check` and `cargo test` will run on every push and pull request and both will
+block, with clippy advisory — see [CI and releases](ci.md). Until then, running
+them locally is the only check there is.
 
 ---
 
 ## Rust
 
-Twelve of seventeen repositories.
+Eleven of the sixteen repositories in the organization.
 
 ```bash
 cargo fmt --all
@@ -20,21 +22,22 @@ cargo test --all
 
 ### Formatting
 
-**Use `rustfmt` defaults.** Do not add a `rustfmt.toml`.
+**Use `rustfmt` defaults.** Do not add a `rustfmt.toml`. No repository has one,
+and all eleven Rust repos pass `cargo fmt --all --check` on rustfmt 1.88 — there
+is no formatting backlog to work around.
 
-There is exactly one in the organization —
-`crowncrate-linux/rustfmt.toml` — and it is a liability rather than a model. It
-is an ~80-key dump of default values containing:
+`crowncrate-linux` used to carry the organization's only one, and it was a
+liability rather than a model: an ~80-key dump of default values containing
 
 - `edition = "2015"`, while the crate is edition 2024. `cargo fmt` passes the
-  crate edition so it works, but a bare `rustfmt` invocation will mis-parse 2024
+  crate edition so it worked, but a bare `rustfmt` invocation mis-parses 2024
   syntax.
 - `required_version = "1.5.1"` — rustfmt refuses to run on any other version.
 - `fn_args_layout`, which is deprecated in favour of `fn_params_layout`.
-- Numerous nightly-only keys alongside `unstable_features = false`, so they are
+- Numerous nightly-only keys alongside `unstable_features = false`, so they were
   silently ignored with warnings.
 
-Deleting it is a reasonable patch.
+It has been deleted. Do not reintroduce it.
 
 ### Linting
 
@@ -48,9 +51,10 @@ file returns nothing. Lint policy is by convention only.
 ### Language
 
 - **Edition 2024** for all new crates.
-- **Minimum Rust 1.88.** Every crate declares `rust-version` and pins a
-  toolchain in `rust-toolchain.toml`; edition 2024
-  requires it regardless. There is no `rust-toolchain.toml` in any repo.
+- **Minimum Rust 1.88.** All eleven Rust crates declare
+  `rust-version = "1.88"` and ship a `rust-toolchain.toml` with
+  `channel = "1.88.0"`, so everyone compiles on the same toolchain. Keep both in
+  step when you add a crate.
 - `crownpositor` uses let-chains and `resolver = "3"`.
 
 ### Comments and documentation
@@ -94,9 +98,13 @@ The working rule:
 - Do not add a dependency you do not use. `crownshell` currently declares
   `bluer`, `battery` and `tracing` and uses none of them — `bluer` alone forces a
   D-Bus and BlueZ link requirement on every downstream consumer.
-- **Pin git dependencies.** `crownbar` and `crowndock` declare `crownshell` by
-  URL with no `rev`, so `cargo update` can silently move them onto a breaking
-  HEAD. New git deps should carry a `rev` or `tag`.
+- **Depend by version, and pin any git dependency.** `crownbar` and `crowndock`
+  used to declare `crownshell` by URL with no `rev`, so `cargo update` could
+  silently move them onto a breaking HEAD; both now declare `crownshell = "0.3"`
+  instead. That version is not on crates.io yet — only 0.1.0 and 0.2.0 are — so
+  those repos build solely through the `[patch.crates-io]` overlay, and will
+  until 0.3.0 is published. Any git dependency that remains should carry a `rev`
+  or `tag`.
 - Match versions with siblings where crates interoperate. `crowndictator`'s
   manifest documents its `smithay-client-toolkit` and `calloop` versions as
   "matched to crownshell"; that discipline is worth extending.
@@ -167,9 +175,10 @@ See [Documentation style](documentation-style.md).
 
 ## Licensing
 
-**Add a LICENSE file to any new repository.** Thirteen of fifteen existing repos
-have none, which makes them all-rights-reserved by default despite being
-presented as open source.
+**Add a LICENSE file to any new repository.** Only three of the sixteen —
+`crownOs-setup`, `crownos-documentations` and `crownshell` — carry one on their
+default branch. The other thirteen are all-rights-reserved by default despite
+being presented as open source.
 
 Two further inconsistencies to resolve before copying either: the existing files
 disagree on copyright holder (`marvelxcodes` vs `Crown-OS`), and `crowndictator`

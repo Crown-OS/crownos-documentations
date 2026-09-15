@@ -1,7 +1,11 @@
 # Installing CrownOS
 
-**You cannot install CrownOS today.** This page explains why, and what you can
-run instead.
+**You cannot install CrownOS today.** There is no image, no package, and nothing
+published to crates.io. This page explains why, and what you can run instead.
+
+If you just want to *see* CrownOS, skip to
+[Try it without installing](try-it-without-installing.md) — a nested compositor
+session is the only way anyone can run it right now.
 
 ---
 
@@ -17,14 +21,16 @@ iso_application="Arch Linux Live/Rescue DVD"
 ```
 
 The hostname is `archiso`. The motd points at the Arch install guide. The package
-list is upstream's 127-package rescue set — **no compositor, no Wayland stack, no
+list is upstream's 128-package rescue set — **no compositor, no Wayland stack, no
 CrownOS component**. `pacman.conf` enables only `[core]` and `[extra]`; there is
 no CrownOS repository.
 
 Building it produces a generic Arch rescue image.
 
-There are no PKGBUILDs, no AUR entries and no `.deb`. What there *is* is
-crates.io — see [Install with cargo](#install-with-cargo) below.
+There are no PKGBUILDs, no AUR entries and no `.deb`. There is nothing on
+crates.io either: the only CrownOS crates ever published are `crownshell` 0.1.0
+and 0.2.0, a library with no binaries. Every runnable component has to be built
+from a checkout — see [Building from source](#building-from-source) below.
 
 ### About the download page
 
@@ -37,42 +43,48 @@ ARM aarch64 2.1 GB — across five mirrors at `dl.crownos.org` and
 
 ---
 
-## Install with cargo
+## Building from source
 
-The quickest path on any distribution. `crownos-setup` installs the system
-libraries CrownOS links against, then `cargo install`s the components:
+This is the only path. `cargo install crownbar` and friends **cannot work** —
+none of those crates has ever been published, so there is nothing for cargo to
+fetch. `crownos-setup`'s `./bootstrap.sh --user` mode issues exactly those
+`cargo install` commands and will fail for the same reason; use `--dev`.
 
 ```bash
 git clone https://github.com/Crown-OS/crownos-setup && cd crownos-setup
-./bootstrap.sh --user
+./bootstrap.sh --dev
 ```
 
-It reads `/etc/os-release` and dispatches to `pacman`, `apt`, `dnf` or `zypper`,
-so Arch, Debian, Ubuntu, Fedora, openSUSE and their derivatives all work. There
-is also a Nix flake (`nix develop github:Crown-OS/crownos-setup`) and a container
-image. See [Prerequisites](../10-getting-started/prerequisites.md).
+That does three things: installs the system libraries CrownOS links against,
+clones the eleven Rust repositories into `~/src/crownos`, and writes the
+`[patch.crates-io]` overlay without which five of them do not resolve their
+dependencies at all. See
+[Workspace setup](../10-getting-started/workspace-setup.md#the-overlay-mandatory)
+for what the overlay is and why it is not optional.
+
+It reads `/etc/os-release` and dispatches to `pacman`, `apt`, `dnf`, `zypper`,
+`apk`, `xbps` or `emerge`, so Arch, Debian, Ubuntu, Fedora, openSUSE, Alpine,
+Void, Gentoo and their derivatives all work. There is also a Nix flake
+(`nix develop github:Crown-OS/crownos-setup`) and a container image. See
+[Prerequisites](../10-getting-started/prerequisites.md).
 
 To inspect your machine without changing it:
 
 ```bash
 ./bootstrap.sh --check
-./bootstrap.sh --user --dry-run
+./bootstrap.sh --dev --dry-run
 ```
 
-If you would rather do it by hand, install the native dependencies for your
-distro and then:
-
-```bash
-cargo install crownbar crowndock crownotify crowndictator
-```
-
-Do **not** skip the native dependencies. `cargo install` compiles from source and
+Do **not** skip the native dependencies. Everything compiles from source and
 will fail at link time without them — `crownpositor` in particular needs libdrm,
 libinput, libseat, libudev and pixman.
 
 > **`crowndictator` downloads a lot.** Its build fetches a prebuilt ONNX Runtime,
 > and its first run fetches 700 MB (CPU) or 2.5 GB (GPU) of model weights into
-> `~/.cache/huggingface/hub`. `crowndictator --demo` skips the model entirely.
+> `~/.cache/huggingface/hub`. `crowndictator -- --demo` skips the model entirely.
+> Its `ort` dependency also reaches `openssl-sys`, so it needs OpenSSL
+> development headers. `deps.toml` covers that now; install by hand only if you
+> are working from an older package list.
 
 ---
 
@@ -89,7 +101,7 @@ not need `crownpositor`.
 | [`crownbar`](../30-components/crownbar.md) | A status bar | Usable; no configuration |
 | [`crownpositor`](../30-components/crownpositor.md) | A tiling compositor, nested or on hardware | Early but functional |
 | [`crowndock`](../30-components/crowndock.md) | A dock | Cannot launch applications |
-| [`crownotify`](../30-components/crownotify.md) | A notification daemon | Does not currently build |
+| [`crownotify`](../30-components/crownotify.md) | A notification daemon | Builds; the notification centre is a no-op |
 
 Everything is built from source. See
 [Prerequisites](../10-getting-started/prerequisites.md) and
@@ -106,10 +118,21 @@ git clone git@github.com:Crown-OS/crownshell.git
 git clone git@github.com:Crown-OS/crownos-config.git
 git clone git@github.com:Crown-OS/crowndictator.git
 
+# Without this file, crowndictator fails at `cargo metadata`: it asks for
+# crownshell 0.3 and crownos-config 0.2, and neither exists on crates.io.
+mkdir -p .cargo
+cat > .cargo/config.toml <<'EOF'
+[patch.crates-io]
+crownshell = { path = "crownshell" }
+crownos-config = { path = "crownos-config" }
+EOF
+
 cd crowndictator
 cargo run -- --demo     # try the UI with no model download
 cargo run               # the real daemon — first run downloads 700 MB–2.5 GB
 ```
+
+`./bootstrap.sh --dev` writes that same file for you and clones the rest.
 
 Be aware of what it needs: `input` group membership, an ALSA-capable microphone,
 `wtype` or `ydotool` or `wl-clipboard`, and a large first-run model download from
@@ -125,7 +148,10 @@ CROWN_BACKEND=winit cargo run
 
 This opens a window containing a full CrownOS session, nested inside your
 existing desktop. `Super+Return` spawns `foot`; `Super+Shift+E` quits.
-[Keybindings](../50-reference/keybindings.md) has the full table.
+
+**[Try it without installing](try-it-without-installing.md)** walks through the
+whole thing — finding the nested session's Wayland socket, attaching a bar and a
+dock to it, and where the logs go.
 
 Running it on real hardware (`CROWN_BACKEND=kms`, from a bare TTY) works, but
 have a second TTY or an SSH session available before you try.
@@ -170,8 +196,8 @@ Roughly, in order:
 6. **Fix the live-medium security defaults** — the inherited profile has an empty
    root password, root autologin and permissive sshd, which are fine for a rescue
    ISO and not for an installed system.
-7. **Resolve licensing** — the profile is GPL-3.0 upstream content in a repo with
-   no LICENSE file.
+7. **Resolve licensing** — the profile is GPL-3.0 upstream content, and only
+   three of the sixteen repositories carry a LICENSE on their default branch.
 
 If you want to help with any of that, see
 [Your first change](../10-getting-started/your-first-change.md).
@@ -180,6 +206,8 @@ If you want to help with any of that, see
 
 ## See also
 
+- [Try it without installing](try-it-without-installing.md) — the nested session
+- [Troubleshooting](troubleshooting.md) — symptoms and their causes
 - [Known limitations](known-limitations.md) — what to expect if you run it anyway
 - [Project status](../00-overview/project-status.md) — component-by-component
 - [SECURITY.md](../../SECURITY.md) — known security posture

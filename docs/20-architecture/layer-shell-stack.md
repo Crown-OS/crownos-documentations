@@ -32,7 +32,7 @@ buffer scale, drag-and-drop, and a wgpu/Vello rendering surface per window.
 What you write is a config and a paint callback.
 
 ```rust
-use crownshell::predule::*;
+use crownshell::prelude::*;
 use vello::kurbo::RoundedRect;
 use vello::peniko::{Color, Fill};
 
@@ -70,10 +70,11 @@ fn main() -> Result<()> {
 }
 ```
 
-> **The prelude module is spelled `predule`.** It is a typo in `crownshell`'s
-> public API, present since the crate was extracted. Every downstream crate uses
-> it. Fixing it is a breaking change to four consumers, so it stands for now —
-> just do not assume `prelude` will work.
+> **Write `prelude`, not `predule`.** `crownshell` shipped the misspelling in
+> 0.1.0 and 0.2.0, and every downstream crate used it. 0.3.0 introduces the
+> correctly spelled `prelude` as the real module and keeps `predule` as a
+> `#[deprecated]` re-export so existing code still compiles. The alias is
+> scheduled for removal in 0.4.0, so new code should use `prelude`.
 
 ### The API surface
 

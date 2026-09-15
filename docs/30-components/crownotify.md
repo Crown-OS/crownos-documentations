@@ -33,17 +33,24 @@ cargo run
 dbus-run-session -- cargo test -- --test-threads=1
 ```
 
-> **This used to not compile.** `src/main.rs` called
+> **It does not compile on the default branch.** `src/main.rs` calls
 > `window.request_frame(compositor_state, qh)` with two arguments while
-> `crownshell` had taken three since 0.2.0 — so it was stale against the
+> `crownshell` has taken three since 0.2.0 — so it is stale against the
 > *published* release, not merely against HEAD. Because it used
 > `path = "../crownshell"` and `crowndictator` needed the three-argument form,
-> the two could not build against the same checkout at all. Fixed by binding
-> `text_cx` out of the destructured `App` in the ping-source closure.
+> the two could not build against the same checkout at all.
+>
+> **The fix exists but is unpushed.** Binding `text_cx` out of the destructured
+> `App` in the ping-source closure resolves it, and with that change, the pinned
+> 1.88.0 toolchain and the overlay below, `crownotify` passes
+> `cargo check --all-targets`. That edit is uncommitted local work — a visitor
+> cloning `main` still gets the two-argument call and the build error.
 
-`crownshell` is now `"0.3"` from crates.io. To build against a local checkout,
-use the overlay in
-[Workspace setup](../10-getting-started/workspace-setup.md#developing-across-repositories).
+The manifest declares `crownshell = "0.3"`. **That version is not on crates.io**
+— 0.1.0 and 0.2.0 are the only published releases — so the requirement resolves
+only through the `[patch.crates-io]` overlay above your checkouts. It is
+mandatory, not an opt-in for cross-repo work. See
+[Workspace setup](../10-getting-started/workspace-setup.md#the-overlay-mandatory).
 
 ---
 

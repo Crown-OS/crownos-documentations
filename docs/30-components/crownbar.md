@@ -37,10 +37,19 @@ existing desktop.
 > `rustflags = ["-C", "link-arg=-fuse-ld=bfd"]`. If you use `mold` or `lld`
 > globally, it is overridden here. You need `ld.bfd` from `binutils`.
 
-`crownshell` is now `"0.3"` from crates.io. It used to be a **git dependency with no rev or tag** whose lockfile pinned commit
-`de4ab90` at version 0.1.0, three commits behind HEAD. Your local `crownshell`
-checkout is not used. See
-[Dependency graph](../20-architecture/dependency-graph.md#version-skew).
+The manifest now declares `crownshell = "0.3"`. It used to be a **git dependency
+with no rev or tag** whose lockfile pinned commit `de4ab90` at version 0.1.0,
+three commits behind HEAD.
+
+> **`crownshell` 0.3 does not exist on crates.io.** Only 0.1.0 and 0.2.0 are
+> published. A plain `git clone` of this repo therefore fails at
+> `cargo metadata`, before any compilation. The requirement is satisfied by the
+> `[patch.crates-io]` overlay above your checkouts — see
+> [Workspace setup](../10-getting-started/workspace-setup.md#the-overlay-mandatory).
+> With that overlay in place and the pinned 1.88.0 toolchain, `crownbar` passes
+> `cargo check --all-targets`.
+
+See [Dependency graph](../20-architecture/dependency-graph.md#version-skew-resolved).
 
 ---
 

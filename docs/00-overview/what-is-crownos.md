@@ -73,8 +73,13 @@ Being direct about this saves you time:
   notification centre.
 - **The phone bridge does not work.** Neither the Linux daemon nor the Android
   app is functional; they have never talked to each other.
-- **Packaging has just started.** `crownshell` is on crates.io; the rest is
-  being published now. No AUR, no ISO, no `.deb`.
+- **Packaging has not started.** `crownshell` 0.1.0 and 0.2.0 are the only
+  CrownOS crates on crates.io, and they are a library with no binaries. No AUR,
+  no ISO, no `.deb`, and nothing you can `cargo install`. The manifests already
+  ask for `crownshell 0.3` and `crownos-config 0.2`, neither of which was ever
+  published, so most repositories do not even resolve their dependencies from a
+  plain clone — a `[patch.crates-io]` overlay is required. See
+  [Workspace setup](../10-getting-started/workspace-setup.md#the-overlay-mandatory).
 
 What *does* work, and works well, is the compositor, the shell framework, the
 config system, and voice dictation. See
@@ -87,4 +92,5 @@ config system, and voice dictation. See
 - [Component map](component-map.md) — every repository, what it does, its status
 - [Project status](project-status.md) — what builds, what is broken, what is planned
 - [Architecture overview](../20-architecture/overview.md) — how it fits together
+- [Try it without installing](../60-users/try-it-without-installing.md) — the only way to run it today
 - [Prerequisites](../10-getting-started/prerequisites.md) — start building
