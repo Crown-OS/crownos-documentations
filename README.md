@@ -1,3 +1,29 @@
+> [!IMPORTANT]
+> **This repository is archived. The documentation moved to
+> [Crown-OS/crownOs](https://github.com/Crown-OS/crownOs/tree/main/docs), beside the code it describes.**
+>
+> It was kept separate and it drifted. When the configuration schema changed on
+> 7 September 2026, five pages here went on describing types that no longer
+> existed, and nothing caught it -- because nothing here is compiled, tested or
+> built against the code. The replacement is smaller on purpose: every default it
+> quotes is printed from the real parser, the shipped example config is parsed by
+> a test, and a CI job fails the build if a link stops resolving.
+>
+> | What you wanted | Where it is now |
+> |---|---|
+> | Contribution guide | [CONTRIBUTING.md](https://github.com/Crown-OS/crownOs/blob/main/CONTRIBUTING.md) |
+> | What is CrownOS, project status | [README](https://github.com/Crown-OS/crownOs#verified-not-assumed) |
+> | Build and run | [README](https://github.com/Crown-OS/crownOs#build-it) |
+> | Prerequisites, per distribution | [crownOs-setup](https://github.com/Crown-OS/crownOs-setup/blob/main/generated/prerequisites.md) |
+> | Architecture, layer-shell stack, IPC | [docs/architecture.md](https://github.com/Crown-OS/crownOs/blob/main/docs/architecture.md) |
+> | Config schema reference | [docs/configuration.md](https://github.com/Crown-OS/crownOs/blob/main/docs/configuration.md) |
+> | Keybindings reference | [docs/keybindings.md](https://github.com/Crown-OS/crownOs/blob/main/docs/keybindings.md) |
+> | Known limitations, troubleshooting | [docs/troubleshooting.md](https://github.com/Crown-OS/crownOs/blob/main/docs/troubleshooting.md) |
+> | Security policy | [.github/SECURITY.md](https://github.com/Crown-OS/.github/blob/main/SECURITY.md) |
+>
+> Nothing below is maintained. It is kept because the history is worth having and
+> because old links should still resolve -- not because it is accurate.
+
 # CrownOS Documentation
 
 CrownOS is an Arch-based, Wayland-native Linux distribution with a desktop shell
